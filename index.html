@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>캠미러 – 폰 화면 모니터링</title>
+<title>스크린미러 – 폰 화면 미러링</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap');
@@ -202,11 +202,13 @@
     border: 1px solid var(--border);
   }
   .video-wrap.landscape { aspect-ratio: 16/9; }
+  .video-wrap.auto { aspect-ratio: auto; min-height: 200px; }
   video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    background: #000;
   }
   .video-overlay {
     position: absolute;
@@ -348,7 +350,7 @@
 <body>
 
 <div class="header">
-  <div class="logo">CAM<span>MIRROR</span></div>
+  <div class="logo">SCREEN<span>MIRROR</span></div>
   <div class="badge">WebRTC · FREE</div>
 </div>
 
@@ -358,8 +360,8 @@
   <div class="mode-selector" id="modeSelector">
     <button class="mode-btn active" id="btnSender" onclick="setMode('sender')">
       <span class="icon">📱</span>
-      <span class="label">촬영 폰</span>
-      <span class="sub">카메라 전송</span>
+      <span class="label">송출 폰</span>
+      <span class="sub">화면 공유</span>
     </button>
     <button class="mode-btn" id="btnViewer" onclick="setMode('viewer')">
       <span class="icon">🖥️</span>
@@ -371,9 +373,9 @@
   <!-- ====== SENDER UI ====== -->
   <div id="senderUI">
     <div class="card" id="senderReady">
-      <div class="card-title">STEP 1 — 방 코드 생성</div>
+      <div class="card-title">STEP 1 — 화면 공유 시작</div>
       <button class="btn btn-primary" id="startSenderBtn" onclick="startSender()">
-        📡 카메라 시작 &amp; 코드 생성
+        📡 화면 공유 시작 &amp; 코드 생성
       </button>
       <div class="url-box" id="shareUrl" style="margin-top:14px">
         <span id="shareUrlText">이 페이지 URL을 모니터 폰에서 열어주세요</span>
@@ -385,17 +387,14 @@
       <div class="card-title">방 코드 — 모니터 폰에 입력하세요</div>
       <div class="room-code" id="senderCode">----</div>
       <div class="room-code-hint">모니터 폰에서 이 숫자 4자리를 입력하세요</div>
-      <div class="video-wrap" id="senderVideoWrap">
+      <div class="video-wrap auto" id="senderVideoWrap">
         <video id="localVideo" autoplay muted playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
         </div>
       </div>
-      <div class="orientation-row">
-        <button class="orient-btn active" id="orientV" onclick="setOrientation('v')">📱 세로</button>
-        <button class="orient-btn" id="orientH" onclick="setOrientation('h')">🖼 가로</button>
-      </div>
+      <div class="room-code-hint" style="margin-top:10px; margin-bottom:0">화면 공유 중 — 다른 앱으로 전환해도 계속 송출됩니다</div>
       <div class="status-row">
         <div class="status-dot" id="senderStatusDot"></div>
         <span id="senderStatusText">모니터 연결 대기 중...</span>
@@ -419,7 +418,7 @@
 
     <div class="card hidden" id="viewerLive">
       <div class="card-title">실시간 화면</div>
-      <div class="video-wrap" id="viewerVideoWrap">
+      <div class="video-wrap auto" id="viewerVideoWrap">
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
@@ -438,11 +437,12 @@
   <div class="card" id="howTo">
     <div class="card-title">사용 방법</div>
     <ul class="steps">
-      <li><div class="step-num">1</div><span><b>촬영 폰</b>에서 이 페이지 열기 → <b>촬영 폰</b> 선택</span></li>
-      <li><div class="step-num">2</div><span>"카메라 시작 &amp; 코드 생성" 누르기 → <b>4자리 코드</b> 확인</span></li>
+      <li><div class="step-num">1</div><span><b>송출 폰</b>에서 이 페이지 열기 → <b>송출 폰</b> 선택</span></li>
+      <li><div class="step-num">2</div><span>"화면 공유 시작" 누르기 → 화면 공유 허용 → <b>4자리 코드</b> 확인</span></li>
       <li><div class="step-num">3</div><span><b>모니터 폰</b>에서 같은 페이지 열기 → <b>모니터 폰</b> 선택</span></li>
       <li><div class="step-num">4</div><span>4자리 코드 입력 → <b>연결하기</b> → 실시간 화면 확인</span></li>
-      <li><div class="step-num">★</div><span>같은 Wi-Fi 불필요 · LTE에서도 작동 · 무료</span></li>
+      <li><div class="step-num">★</div><span>카메라 앱 등 다른 앱으로 전환해도 미러링 유지</span></li>
+      <li><div class="step-num">!</div><span>Android Chrome 지원 · iOS 미지원</span></li>
     </ul>
   </div>
 
@@ -455,11 +455,6 @@ let peer = null;
 let localStream = null;
 let currentMode = 'sender';
 let conn = null;
-
-// PeerJS uses a free public cloud server
-function makePeerId(code) {
-  return 'cammirror-' + code + '-' + Math.random().toString(36).slice(2,6);
-}
 
 function setMode(mode) {
   currentMode = mode;
@@ -481,14 +476,20 @@ function copyUrl() {
 // ---- SENDER ----
 async function startSender() {
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    localStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
       audio: false
     });
   } catch(e) {
-    showToast('카메라 권한을 허용해주세요');
+    showToast('화면 공유를 허용해주세요');
     return;
   }
+
+  // 사용자가 시스템에서 화면 공유를 중단하면 자동 종료
+  localStream.getVideoTracks()[0].addEventListener('ended', () => {
+    showToast('화면 공유가 중단되었습니다');
+    stopAll();
+  });
 
   const video = document.getElementById('localVideo');
   video.srcObject = localStream;
@@ -542,13 +543,6 @@ function updateSenderStatus(connected) {
   }
 }
 
-function setOrientation(o) {
-  const wrap1 = document.getElementById('senderVideoWrap');
-  const wrap2 = document.getElementById('viewerVideoWrap');
-  document.getElementById('orientV').classList.toggle('active', o === 'v');
-  document.getElementById('orientH').classList.toggle('active', o === 'h');
-  [wrap1, wrap2].forEach(w => w.classList.toggle('landscape', o === 'h'));
-}
 
 // ---- VIEWER ----
 function startViewer() {
