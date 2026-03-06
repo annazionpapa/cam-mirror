@@ -627,6 +627,7 @@ let peer = null;
 let localStream = null;
 let currentMode = 'sender';
 let conn = null;
+let dataConn = null; // PeerJS 데이터 채널 (녹화 상태 전송용)
 let currentFacing = 'environment';
 let flashOn = false;
 let hasHardwareZoom = false;
@@ -730,11 +731,21 @@ async function startSender() {
   });
 
   peer.on('call', (call) => {
-    // 캔버스 스트림 전송 (줌 포함)
     call.answer(canvasStream);
     conn = call;
     updateSenderStatus(true);
     call.on('close', () => updateSenderStatus(false));
+  });
+
+  // 뷰어로부터 데이터 연결 수신
+  peer.on('connection', (dc) => {
+    dataConn = dc;
+    // 연결 시 현재 녹화 상태 전송
+    dc.on('open', () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        dc.send({ type: 'rec', recording: true });
+      }
+    });
   });
 
   peer.on('error', (err) => {
@@ -850,7 +861,7 @@ function toggleRecord() {
     mediaRecorder.stop();
     document.getElementById('btnRecord').classList.remove('recording');
     document.getElementById('senderRecBadge').classList.remove('visible');
-    document.getElementById('viewerRecBadge').classList.remove('visible');
+    if (dataConn && dataConn.open) dataConn.send({ type: 'rec', recording: false });
     showToast('녹화 종료 · 저장 중...');
     return;
   }
@@ -895,7 +906,7 @@ function toggleRecord() {
   mediaRecorder.start(1000);
   document.getElementById('btnRecord').classList.add('recording');
   document.getElementById('senderRecBadge').classList.add('visible');
-  document.getElementById('viewerRecBadge').classList.add('visible');
+  if (dataConn && dataConn.open) dataConn.send({ type: 'rec', recording: true });
   showToast('녹화 시작');
 }
 
@@ -926,6 +937,14 @@ function startViewer() {
   });
 
   peer.on('open', () => {
+    // 데이터 채널 연결 (녹화 상태 수신용)
+    dataConn = peer.connect('cm-' + code);
+    dataConn.on('data', (msg) => {
+      if (msg && msg.type === 'rec') {
+        document.getElementById('viewerRecBadge').classList.toggle('visible', msg.recording);
+      }
+    });
+
     const call = peer.call('cm-' + code, getFakeStream());
     conn = call;
     call.on('stream', (remoteStream) => {
@@ -967,6 +986,7 @@ function stopAll() {
   softwareZoom = 1;
 
   if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (dataConn) { dataConn.close(); dataConn = null; }
   if (conn) { conn.close(); conn = null; }
   if (peer) { peer.destroy(); peer = null; }
   flashOn = false;
