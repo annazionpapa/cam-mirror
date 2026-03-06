@@ -316,7 +316,52 @@
   .video-wrap:fullscreen video,
   .video-wrap:-webkit-full-screen video {
     object-fit: contain;
+    transition: object-fit 0.3s;
   }
+  .video-wrap:fullscreen video.fit-cover,
+  .video-wrap:-webkit-full-screen video.fit-cover {
+    object-fit: cover;
+  }
+  /* Fit mode toggle button in fullscreen */
+  .video-wrap .fit-toggle-btn {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    z-index: 12;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .video-wrap:fullscreen .fit-toggle-btn,
+  .video-wrap:-webkit-full-screen .fit-toggle-btn { display: block; }
+  /* Orientation indicator in fullscreen */
+  .video-wrap .orientation-indicator {
+    display: none;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.5);
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 5px 10px;
+    border-radius: 12px;
+    z-index: 12;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .video-wrap:fullscreen .orientation-indicator,
+  .video-wrap:-webkit-full-screen .orientation-indicator { display: block; }
   .video-wrap:fullscreen .fs-hint,
   .video-wrap:-webkit-full-screen .fs-hint { display: none; }
   .video-wrap:fullscreen .zoom-indicator,
@@ -845,7 +890,9 @@
     <div class="card hidden" id="senderLive">
       <div class="card-title">연결 코드</div>
       <div class="room-code" id="senderCode">----</div>
-      <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요</div>
+      <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요
+        <button style="margin-left:8px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-size:11px; padding:3px 8px; border-radius:6px; cursor:pointer; font-family:inherit;" onclick="regenerateCode()">새 코드</button>
+      </div>
 
       <!-- QR Code -->
       <div class="qr-container" id="qrContainer">
@@ -925,6 +972,8 @@
         </div>
         <div class="fs-hint">탭하여 전체화면</div>
         <div class="zoom-indicator" id="viewerZoomIndicator"></div>
+        <button class="fit-toggle-btn" id="fitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
+        <div class="orientation-indicator" id="orientationIndicator"></div>
       </div>
 
       <!-- Remote controls -->
@@ -1065,6 +1114,12 @@ let wakeLockSentinel = null;
 let codeRetryCount = 0;
 const MAX_CODE_RETRIES = 5;
 let currentRoomCode = '';
+
+// Fit mode toggle (contain/cover)
+let fitCover = false;
+
+// Sender orientation tracking
+let senderOrientation = 'portrait';
 
 // PWA
 let deferredInstallPrompt = null;
@@ -1376,7 +1431,10 @@ async function startSender() {
   // Wake lock
   requestWakeLock();
 
-  currentRoomCode = String(Math.floor(1000 + Math.random() * 9000));
+  // Reuse previous code if available (so viewers can reconnect to same code)
+  if (!currentRoomCode) {
+    currentRoomCode = String(Math.floor(1000 + Math.random() * 9000));
+  }
   codeRetryCount = 0;
   createSenderPeer(currentRoomCode);
 }
@@ -1506,6 +1564,28 @@ function approvePendingCall() {
   updateSenderStatus();
   showToast('연결 허용됨');
   broadcastViewerCount();
+
+  // Send current orientation to the new viewer
+  const isLand = window.innerWidth > window.innerHeight;
+  senderOrientation = isLand ? 'landscape' : 'portrait';
+  broadcastToViewers({ type: 'orientation', orientation: senderOrientation });
+}
+
+function regenerateCode() {
+  if (viewers.filter(v => v.call).length > 0) {
+    if (!confirm('현재 연결된 모니터가 있습니다. 코드를 변경하면 연결이 끊어집니다. 계속하시겠습니까?')) return;
+  }
+  // Close existing peer and create new one with new code
+  viewers.forEach(v => {
+    if (v.dataConn) try { v.dataConn.close(); } catch(e){}
+    if (v.call) try { v.call.close(); } catch(e){}
+  });
+  viewers = [];
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  currentRoomCode = String(Math.floor(1000 + Math.random() * 9000));
+  codeRetryCount = 0;
+  createSenderPeer(currentRoomCode);
+  showToast('새 코드 생성됨');
 }
 
 function rejectPendingCall() {
@@ -1915,6 +1995,17 @@ function connectViewer(code) {
       if (msg && msg.type === 'viewerCount') {
         // could display but optional
       }
+      if (msg && msg.type === 'orientation') {
+        updateOrientationIndicator(msg.orientation);
+      }
+      if (msg && msg.type === 'senderStopped') {
+        // Sender camera was turned off
+        showToast('촬영 폰에서 카메라가 종료되었습니다');
+        document.getElementById('viewerStatusText').textContent = '촬영 종료됨 · 재연결 대기 중';
+        const dot = document.getElementById('viewerStatusDot');
+        dot.classList.remove('on');
+        dot.classList.add('connecting');
+      }
     });
     viewerDataConn.on('close', () => {
       // Data channel closed
@@ -1931,6 +2022,8 @@ function connectViewer(code) {
       txt.textContent = '연결됨 · 실시간 수신 중';
       showToast('연결 성공!');
       viewerReconnectAttempts = 0;
+      // Viewer side: wake lock to prevent screen dimming
+      requestWakeLock();
     });
     call.on('close', () => {
       document.getElementById('viewerStatusText').textContent = '연결 끊김';
@@ -2014,6 +2107,11 @@ function stopAll() {
     mediaRecorder = null;
   }
 
+  // Notify viewers before closing connections (sender side)
+  if (currentMode === 'sender' && viewers.length > 0) {
+    broadcastToViewers({ type: 'senderStopped' });
+  }
+
   stopRenderLoop();
   softwareZoom = 1;
 
@@ -2039,12 +2137,16 @@ function stopAll() {
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
 
   flashOn = false;
+  fitCover = false;
   pendingIncomingCall = null;
   clearInterval(approvalTimeout);
   document.getElementById('approvalModal').classList.remove('visible');
 
   // Wake lock release
   releaseWakeLock();
+
+  // Unlock orientation
+  try { screen.orientation.unlock(); } catch(e) {}
 
   // Reset UI
   document.getElementById('senderReady').classList.remove('hidden');
@@ -2060,6 +2162,8 @@ function stopAll() {
   document.getElementById('senderRecBadge').classList.remove('visible');
   document.getElementById('viewerRecBadge').classList.remove('visible');
   document.getElementById('localVideo').style.transform = '';
+  const remoteVideo = document.getElementById('remoteVideo');
+  if (remoteVideo) remoteVideo.classList.remove('fit-cover');
 
   showToast('종료되었습니다');
 }
@@ -2077,12 +2181,21 @@ function toggleFullscreen(wrap) {
 
 // Single fullscreen handler on document (Bug fix: not inside setupVideoTouch)
 function handleFullscreenChange() {
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    // Reset viewer video zoom on exit fullscreen
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!fsEl) {
+    // Exiting fullscreen — reset viewer video zoom
     const remoteVideo = document.getElementById('remoteVideo');
-    if (remoteVideo) remoteVideo.style.transform = '';
-    // Reset any pinch zoom state on viewer
+    if (remoteVideo) {
+      remoteVideo.style.transform = '';
+      remoteVideo.classList.remove('fit-cover');
+    }
+    fitCover = false;
     viewerPinchZoom = 1;
+    // Unlock orientation on exit
+    try { screen.orientation.unlock(); } catch(e) {}
+  } else {
+    // Entering fullscreen — lock orientation to 'any' so it stays fullscreen
+    try { screen.orientation.lock('any').catch(() => {}); } catch(e) {}
   }
 }
 document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -2172,6 +2285,34 @@ setupVideoTouch(document.getElementById('senderVideoWrap'));
 setupVideoTouch(document.getElementById('viewerVideoWrap'));
 
 // ============================================================
+// FIT MODE TOGGLE (contain ↔ cover in fullscreen)
+// ============================================================
+function toggleFitMode(e) {
+  if (e) e.stopPropagation();
+  fitCover = !fitCover;
+  const video = document.getElementById('remoteVideo');
+  video.classList.toggle('fit-cover', fitCover);
+  const btn = document.getElementById('fitToggleBtn');
+  btn.textContent = fitCover ? '\u26F6 원본 비율' : '\u26F6 화면 채우기';
+}
+
+// ============================================================
+// ORIENTATION INDICATOR UPDATE (viewer side)
+// ============================================================
+function updateOrientationIndicator(orientation) {
+  const el = document.getElementById('orientationIndicator');
+  if (!el) return;
+  if (orientation === 'landscape') {
+    el.textContent = '\uD83D\uDD04 가로 모드';
+  } else {
+    el.textContent = '\uD83D\uDCF1 세로 모드';
+  }
+  el.style.opacity = '1';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+// ============================================================
 // AUTO ORIENTATION
 // ============================================================
 function updateOrientation() {
@@ -2180,6 +2321,15 @@ function updateOrientation() {
     if (document.fullscreenElement === w || document.webkitFullscreenElement === w) return;
     w.classList.toggle('landscape', isLandscape);
   });
+
+  // Sender: broadcast orientation change to viewers
+  if (currentMode === 'sender' && viewers.length > 0) {
+    const newOrientation = isLandscape ? 'landscape' : 'portrait';
+    if (newOrientation !== senderOrientation) {
+      senderOrientation = newOrientation;
+      broadcastToViewers({ type: 'orientation', orientation: newOrientation });
+    }
+  }
 }
 window.addEventListener('resize', updateOrientation);
 window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 100));
