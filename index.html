@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>스크린미러 – 폰 화면 미러링</title>
+<title>캠미러 – 실시간 카메라 모니터링</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --border: #1e1e2e;
-    --accent: #00e5a0;
-    --accent2: #005cff;
-    --text: #e8e8f0;
-    --muted: #555570;
-    --danger: #ff4466;
+    --bg: #09090b;
+    --surface: #18181b;
+    --surface2: #1f1f23;
+    --border: #27272a;
+    --accent: #10b981;
+    --accent-glow: rgba(16,185,129,0.15);
+    --accent2: #3b82f6;
+    --text: #fafafa;
+    --text2: #d4d4d8;
+    --muted: #71717a;
+    --danger: #ef4444;
+    --warn: #f59e0b;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,196 +28,208 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Header */
+  /* ── Header ── */
   .header {
     width: 100%;
-    padding: 18px 24px 14px;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
   }
   .logo {
-    font-family: 'Space Mono', monospace;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent);
+    font-size: 20px;
+    font-weight: 800;
     letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
-  .logo span { color: var(--muted); }
+  .logo-sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 2px;
+  }
   .badge {
     margin-left: auto;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-    background: #1a1a2e;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent-glow);
+    border: 1px solid rgba(16,185,129,0.2);
+    color: var(--accent);
+    padding: 4px 10px;
     border-radius: 20px;
   }
 
-  /* Main */
+  /* ── Main ── */
   .main {
     width: 100%;
-    max-width: 480px;
-    padding: 28px 20px;
+    max-width: 440px;
+    padding: 24px 16px;
     flex: 1;
   }
 
-  /* Mode selector */
+  /* ── Mode selector ── */
   .mode-selector {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 28px;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 4px;
+    border: 1px solid var(--border);
   }
   .mode-btn {
-    padding: 16px 12px;
-    border-radius: 12px;
-    border: 2px solid var(--border);
-    background: var(--surface);
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
     color: var(--muted);
     font-size: 13px;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: inherit;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     text-align: center;
     line-height: 1.5;
   }
-  .mode-btn .icon { font-size: 24px; display: block; margin-bottom: 6px; }
-  .mode-btn .label { font-weight: 700; color: var(--text); display: block; }
-  .mode-btn .sub { font-size: 11px; color: var(--muted); }
+  .mode-btn .icon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .mode-btn .label { font-weight: 700; font-size: 15px; color: var(--text2); display: block; }
+  .mode-btn .sub { font-size: 11px; color: var(--muted); font-weight: 400; }
   .mode-btn.active {
-    border-color: var(--accent);
-    background: rgba(0,229,160,0.07);
+    background: var(--accent-glow);
     color: var(--text);
+    box-shadow: 0 0 0 1px rgba(16,185,129,0.3);
   }
-  .mode-btn:hover { border-color: var(--accent); }
+  .mode-btn.active .label { color: var(--text); }
+  .mode-btn.active .sub { color: var(--accent); }
 
-  /* Section card */
+  /* ── Card ── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 22px 20px;
-    margin-bottom: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
   }
   .card-title {
-    font-size: 12px;
-    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
     color: var(--muted);
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-bottom: 16px;
   }
 
-  /* Room code display */
+  /* ── Room code ── */
   .room-code {
-    font-family: 'Space Mono', monospace;
-    font-size: 42px;
-    font-weight: 700;
-    letter-spacing: 8px;
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: 12px;
     color: var(--accent);
     text-align: center;
-    padding: 18px 0 10px;
+    padding: 20px 0 8px;
+    text-shadow: 0 0 30px rgba(16,185,129,0.3);
   }
-  .room-code-hint {
+  .hint {
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--muted);
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    line-height: 1.5;
   }
 
-  /* Input */
-  .code-input {
-    display: flex;
-    gap: 8px;
-  }
+  /* ── Input ── */
   .code-input input {
-    flex: 1;
+    width: 100%;
     background: var(--bg);
     border: 2px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 24px;
-    letter-spacing: 6px;
+    font-family: inherit;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 10px;
     text-align: center;
-    padding: 14px 12px;
+    padding: 16px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .code-input input:focus { border-color: var(--accent2); }
-  .code-input input::placeholder { color: var(--muted); font-size: 16px; letter-spacing: 2px; }
+  .code-input input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .code-input input::placeholder {
+    color: var(--muted);
+    font-size: 18px;
+    letter-spacing: 6px;
+    font-weight: 400;
+  }
 
-  /* Buttons */
+  /* ── Buttons ── */
   .btn {
     width: 100%;
-    padding: 15px;
+    padding: 14px;
     border-radius: 12px;
     border: none;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: inherit;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
   }
   .btn-primary {
-    background: var(--accent);
-    color: #000;
-  }
-  .btn-primary:hover { background: #00ffb3; transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-secondary {
-    background: transparent;
-    border: 2px solid var(--border);
-    color: var(--muted);
-    margin-top: 10px;
-  }
-  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
-  .btn-danger {
-    background: var(--danger);
+    background: linear-gradient(135deg, var(--accent), #059669);
     color: #fff;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-danger {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--danger);
     margin-top: 10px;
   }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
 
-  /* Video container */
+  /* ── Video ── */
   .video-wrap {
     position: relative;
     width: 100%;
     aspect-ratio: 9/16;
     background: #000;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--border);
   }
-  .video-wrap.landscape { aspect-ratio: 16/9; }
-  .video-wrap.auto { aspect-ratio: auto; min-height: 200px; }
   video {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
-    background: #000;
   }
   .video-overlay {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 10px; left: 10px;
     display: flex;
     gap: 6px;
     align-items: center;
@@ -226,43 +242,96 @@
   }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
   .live-label {
-    font-family: 'Space Mono', monospace;
     font-size: 11px;
     font-weight: 700;
     color: #fff;
-    background: rgba(255,68,102,0.7);
-    padding: 2px 7px;
+    background: rgba(239,68,68,0.8);
+    padding: 2px 8px;
     border-radius: 4px;
+    letter-spacing: 1px;
   }
 
-  /* Orientation toggle */
-  .orientation-row {
+  /* ── Camera controls ── */
+  .cam-controls {
     display: flex;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 10px;
   }
-  .orient-btn {
+  .cam-btn {
     flex: 1;
-    padding: 9px;
-    border-radius: 8px;
-    border: 2px solid var(--border);
-    background: transparent;
-    color: var(--muted);
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
     font-size: 12px;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: inherit;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
+    text-align: center;
   }
-  .orient-btn.active { border-color: var(--accent2); color: var(--text); background: rgba(0,92,255,0.1); }
+  .cam-btn:hover { border-color: var(--muted); }
+  .cam-btn:active { transform: scale(0.97); }
+  .cam-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .cam-btn .cam-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 
-  /* Status indicator */
+  /* ── Zoom slider ── */
+  .zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .zoom-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 32px;
+  }
+  .zoom-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  .zoom-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(16,185,129,0.4);
+  }
+  .zoom-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ── Status ── */
   .status-row {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
+    font-weight: 500;
     color: var(--muted);
-    margin-top: 14px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
   }
   .status-dot {
     width: 8px; height: 8px;
@@ -270,17 +339,17 @@
     background: var(--muted);
     flex-shrink: 0;
   }
-  .status-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-  .status-dot.connecting { background: #ffaa00; animation: blink 0.8s infinite; }
+  .status-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .status-dot.connecting { background: var(--warn); animation: blink 0.8s infinite; }
 
-  /* QR hint */
+  /* ── URL box ── */
   .url-box {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 14px;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--muted);
     word-break: break-all;
     margin-top: 14px;
@@ -288,70 +357,80 @@
     align-items: center;
     gap: 8px;
   }
+  .url-box span { flex: 1; }
   .url-box button {
     flex-shrink: 0;
-    background: var(--border);
-    border: none;
-    color: var(--text);
-    font-size: 11px;
-    padding: 4px 9px;
-    border-radius: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
     cursor: pointer;
+    font-family: inherit;
   }
+  .url-box button:hover { background: var(--border); }
 
-  /* Hidden */
-  .hidden { display: none !important; }
-
-  /* How-to steps */
+  /* ── How-to ── */
   .steps { list-style: none; padding: 0; }
   .steps li {
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    padding: 9px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    color: var(--muted);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text2);
     line-height: 1.6;
   }
   .steps li:last-child { border-bottom: none; }
+  .steps li b { color: var(--text); font-weight: 600; }
   .step-num {
-    width: 22px; height: 22px;
-    background: var(--border);
+    width: 24px; height: 24px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(16,185,129,0.2);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 700;
     color: var(--accent);
     flex-shrink: 0;
     margin-top: 1px;
   }
 
+  /* ── Toast ── */
   .toast {
     position: fixed;
     bottom: 30px;
     left: 50%;
-    transform: translateX(-50%);
-    background: var(--accent);
-    color: #000;
-    font-weight: 700;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 600;
     font-size: 13px;
-    padding: 10px 20px;
-    border-radius: 30px;
+    padding: 12px 24px;
+    border-radius: 14px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: all 0.3s;
     pointer-events: none;
     z-index: 999;
     white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo">SCREEN<span>MIRROR</span></div>
-  <div class="badge">WebRTC · FREE</div>
+  <div class="logo">CamMirror</div>
+  <div class="logo-sub">실시간 카메라 미러링</div>
+  <div class="badge">P2P</div>
 </div>
 
 <div class="main">
@@ -359,66 +438,84 @@
   <!-- Mode selector -->
   <div class="mode-selector" id="modeSelector">
     <button class="mode-btn active" id="btnSender" onclick="setMode('sender')">
-      <span class="icon">📱</span>
-      <span class="label">송출 폰</span>
-      <span class="sub">화면 공유</span>
+      <span class="icon">📷</span>
+      <span class="label">촬영 폰</span>
+      <span class="sub">카메라 송출</span>
     </button>
     <button class="mode-btn" id="btnViewer" onclick="setMode('viewer')">
-      <span class="icon">🖥️</span>
+      <span class="icon">📺</span>
       <span class="label">모니터 폰</span>
-      <span class="sub">화면 수신</span>
+      <span class="sub">실시간 수신</span>
     </button>
   </div>
 
   <!-- ====== SENDER UI ====== -->
   <div id="senderUI">
     <div class="card" id="senderReady">
-      <div class="card-title">STEP 1 — 화면 공유 시작</div>
-      <button class="btn btn-primary" id="startSenderBtn" onclick="startSender()">
-        📡 화면 공유 시작 &amp; 코드 생성
+      <div class="card-title">카메라 시작</div>
+      <button class="btn btn-primary" onclick="startSender()">
+        카메라 켜기 &amp; 코드 생성
       </button>
-      <div class="url-box" id="shareUrl" style="margin-top:14px">
-        <span id="shareUrlText">이 페이지 URL을 모니터 폰에서 열어주세요</span>
+      <div class="url-box" style="margin-top:14px">
+        <span id="shareUrlText">이 페이지 URL을 모니터 폰에서도 열어주세요</span>
         <button onclick="copyUrl()">복사</button>
       </div>
     </div>
 
     <div class="card hidden" id="senderLive">
-      <div class="card-title">방 코드 — 모니터 폰에 입력하세요</div>
+      <div class="card-title">연결 코드</div>
       <div class="room-code" id="senderCode">----</div>
-      <div class="room-code-hint">모니터 폰에서 이 숫자 4자리를 입력하세요</div>
-      <div class="video-wrap auto" id="senderVideoWrap">
+      <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요</div>
+
+      <div class="video-wrap" id="senderVideoWrap">
         <video id="localVideo" autoplay muted playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
         </div>
       </div>
-      <div class="room-code-hint" style="margin-top:10px; margin-bottom:0">화면 공유 중 — 다른 앱으로 전환해도 계속 송출됩니다</div>
+
+      <!-- Camera controls -->
+      <div class="cam-controls">
+        <button class="cam-btn" id="btnFlip" onclick="flipCamera()">
+          <span class="cam-icon">🔄</span>전환
+        </button>
+        <button class="cam-btn" id="btnFlash" onclick="toggleFlash()">
+          <span class="cam-icon">🔦</span>플래시
+        </button>
+      </div>
+
+      <div class="zoom-row" id="zoomRow">
+        <span class="zoom-label">줌</span>
+        <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
+        <span class="zoom-val" id="zoomVal">1.0x</span>
+      </div>
+
       <div class="status-row">
         <div class="status-dot" id="senderStatusDot"></div>
         <span id="senderStatusText">모니터 연결 대기 중...</span>
       </div>
-      <button class="btn btn-danger" onclick="stopAll()">⏹ 종료</button>
+      <button class="btn btn-danger" onclick="stopAll()">종료</button>
     </div>
   </div>
 
   <!-- ====== VIEWER UI ====== -->
   <div id="viewerUI" class="hidden">
     <div class="card" id="viewerInput">
-      <div class="card-title">STEP 1 — 코드 입력</div>
+      <div class="card-title">코드 입력</div>
+      <div class="hint" style="text-align:left; margin-bottom:12px;">촬영 폰에 표시된 4자리 숫자를 입력하세요</div>
       <div class="code-input">
         <input type="number" id="codeInput" maxlength="4" placeholder="0000" inputmode="numeric"
                oninput="this.value=this.value.slice(0,4)">
       </div>
       <button class="btn btn-primary" style="margin-top:12px" onclick="startViewer()">
-        🔗 연결하기
+        연결하기
       </button>
     </div>
 
     <div class="card hidden" id="viewerLive">
       <div class="card-title">실시간 화면</div>
-      <div class="video-wrap auto" id="viewerVideoWrap">
+      <div class="video-wrap" id="viewerVideoWrap">
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
@@ -429,7 +526,7 @@
         <div class="status-dot connecting" id="viewerStatusDot"></div>
         <span id="viewerStatusText">연결 중...</span>
       </div>
-      <button class="btn btn-danger" onclick="stopAll()">⏹ 종료</button>
+      <button class="btn btn-danger" onclick="stopAll()">종료</button>
     </div>
   </div>
 
@@ -437,12 +534,11 @@
   <div class="card" id="howTo">
     <div class="card-title">사용 방법</div>
     <ul class="steps">
-      <li><div class="step-num">1</div><span><b>송출 폰</b>에서 이 페이지 열기 → <b>송출 폰</b> 선택</span></li>
-      <li><div class="step-num">2</div><span>"화면 공유 시작" 누르기 → 화면 공유 허용 → <b>4자리 코드</b> 확인</span></li>
-      <li><div class="step-num">3</div><span><b>모니터 폰</b>에서 같은 페이지 열기 → <b>모니터 폰</b> 선택</span></li>
-      <li><div class="step-num">4</div><span>4자리 코드 입력 → <b>연결하기</b> → 실시간 화면 확인</span></li>
-      <li><div class="step-num">★</div><span>카메라 앱 등 다른 앱으로 전환해도 미러링 유지</span></li>
-      <li><div class="step-num">!</div><span>Android Chrome 지원 · iOS 미지원</span></li>
+      <li><div class="step-num">1</div><span><b>촬영 폰</b>에서 이 페이지를 열고 <b>촬영 폰</b>을 선택하세요</span></li>
+      <li><div class="step-num">2</div><span><b>카메라 켜기</b>를 누르면 4자리 코드가 생성됩니다</span></li>
+      <li><div class="step-num">3</div><span><b>모니터 폰</b>에서 같은 페이지를 열고 <b>모니터 폰</b>을 선택하세요</span></li>
+      <li><div class="step-num">4</div><span>4자리 코드를 입력하고 <b>연결하기</b>를 누르세요</span></li>
+      <li><div class="step-num">✓</div><span>후면/전면 전환, 줌, 플래시를 사용할 수 있습니다</span></li>
     </ul>
   </div>
 
@@ -455,6 +551,8 @@ let peer = null;
 let localStream = null;
 let currentMode = 'sender';
 let conn = null;
+let currentFacing = 'environment'; // 후면 카메라 기본
+let flashOn = false;
 
 function setMode(mode) {
   currentMode = mode;
@@ -475,42 +573,21 @@ function copyUrl() {
 
 // ---- SENDER ----
 async function startSender() {
-  // 브라우저 지원 체크
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-    showToast('이 브라우저는 화면 공유를 지원하지 않습니다 (Android Chrome 필요)');
-    return;
-  }
-
-  try {
-    localStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-  } catch(e) {
-    if (e.name === 'NotAllowedError') {
-      showToast('화면 공유가 거부되었습니다. 다시 시도해주세요');
-    } else {
-      showToast('화면 공유 실패: ' + e.name + ' - ' + e.message);
-    }
-    return;
-  }
-
-  // 사용자가 시스템에서 화면 공유를 중단하면 자동 종료
-  localStream.getVideoTracks()[0].addEventListener('ended', () => {
-    showToast('화면 공유가 중단되었습니다');
-    stopAll();
-  });
+  await openCamera(currentFacing);
+  if (!localStream) return;
 
   const video = document.getElementById('localVideo');
   video.srcObject = localStream;
+
+  // Setup zoom slider based on camera capabilities
+  setupZoom();
 
   // Generate 4-digit code
   const code = String(Math.floor(1000 + Math.random() * 9000));
   document.getElementById('senderCode').textContent = code;
 
   peer = new Peer('cm-' + code, {
-    host: '0.peerjs.com',
-    port: 443,
-    path: '/',
-    secure: true,
-    debug: 0
+    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0
   });
 
   peer.on('open', () => {
@@ -528,7 +605,7 @@ async function startSender() {
   });
 
   peer.on('error', (err) => {
-    if(err.type === 'unavailable-id') {
+    if (err.type === 'unavailable-id') {
       showToast('코드 충돌! 다시 시도해주세요');
       stopAll();
     } else {
@@ -537,48 +614,129 @@ async function startSender() {
   });
 }
 
+async function openCamera(facing) {
+  try {
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+    }
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: facing,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    });
+  } catch(e) {
+    showToast('카메라 권한을 허용해주세요');
+    localStream = null;
+  }
+}
+
+async function flipCamera() {
+  currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
+  flashOn = false;
+  document.getElementById('btnFlash').classList.remove('active');
+
+  await openCamera(currentFacing);
+  if (!localStream) return;
+
+  document.getElementById('localVideo').srcObject = localStream;
+  setupZoom();
+
+  // Update active peer connection with new stream
+  if (conn && conn.peerConnection) {
+    const sender = conn.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+    if (sender) {
+      sender.replaceTrack(localStream.getVideoTracks()[0]);
+    }
+  }
+
+  showToast(currentFacing === 'environment' ? '후면 카메라' : '전면 카메라');
+}
+
+function toggleFlash() {
+  const track = localStream && localStream.getVideoTracks()[0];
+  if (!track) return;
+
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (!caps.torch) {
+    showToast('이 카메라는 플래시를 지원하지 않습니다');
+    return;
+  }
+
+  flashOn = !flashOn;
+  track.applyConstraints({ advanced: [{ torch: flashOn }] });
+  document.getElementById('btnFlash').classList.toggle('active', flashOn);
+  showToast(flashOn ? '플래시 ON' : '플래시 OFF');
+}
+
+function setupZoom() {
+  const track = localStream && localStream.getVideoTracks()[0];
+  if (!track) return;
+
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  const zoomRow = document.getElementById('zoomRow');
+  const slider = document.getElementById('zoomSlider');
+
+  if (caps.zoom) {
+    zoomRow.classList.remove('hidden');
+    slider.min = caps.zoom.min;
+    slider.max = caps.zoom.max;
+    slider.step = (caps.zoom.max - caps.zoom.min) / 50;
+    slider.value = caps.zoom.min;
+    document.getElementById('zoomVal').textContent = '1.0x';
+  } else {
+    zoomRow.classList.add('hidden');
+  }
+}
+
+function applyZoom(val) {
+  const track = localStream && localStream.getVideoTracks()[0];
+  if (!track) return;
+  track.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
+
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  const ratio = caps.zoom ? ((val - caps.zoom.min) / (caps.zoom.max - caps.zoom.min) * 9 + 1).toFixed(1) : val;
+  document.getElementById('zoomVal').textContent = ratio + 'x';
+}
+
 function updateSenderStatus(connected) {
   const dot = document.getElementById('senderStatusDot');
   const txt = document.getElementById('senderStatusText');
-  if(connected) {
+  if (connected) {
     dot.classList.add('on');
     dot.classList.remove('connecting');
-    txt.textContent = '✅ 모니터 폰 연결됨!';
+    txt.textContent = '모니터 폰 연결됨';
   } else {
     dot.classList.remove('on');
     txt.textContent = '모니터 연결 대기 중...';
   }
 }
 
-
 // ---- VIEWER ----
 function startViewer() {
   const code = document.getElementById('codeInput').value.trim();
-  if(code.length !== 4) { showToast('4자리 코드를 입력해주세요'); return; }
+  if (code.length !== 4) { showToast('4자리 코드를 입력해주세요'); return; }
 
   document.getElementById('viewerInput').classList.add('hidden');
   document.getElementById('viewerLive').classList.remove('hidden');
   document.getElementById('howTo').classList.add('hidden');
 
   peer = new Peer({
-    host: '0.peerjs.com',
-    port: 443,
-    path: '/',
-    secure: true,
-    debug: 0
+    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0
   });
 
   peer.on('open', () => {
     const call = peer.call('cm-' + code, getFakeStream());
     conn = call;
     call.on('stream', (remoteStream) => {
-      const video = document.getElementById('remoteVideo');
-      video.srcObject = remoteStream;
+      document.getElementById('remoteVideo').srcObject = remoteStream;
       const dot = document.getElementById('viewerStatusDot');
       const txt = document.getElementById('viewerStatusText');
       dot.classList.add('on');
       dot.classList.remove('connecting');
-      txt.textContent = '✅ 연결됨 · 실시간 화면';
+      txt.textContent = '연결됨 · 실시간 수신 중';
       showToast('연결 성공!');
     });
     call.on('close', () => {
@@ -589,31 +747,31 @@ function startViewer() {
   });
 
   peer.on('error', (err) => {
-    showToast('연결 실패: ' + (err.type === 'peer-unavailable' ? '코드가 없거나 만료됨' : err.message));
+    showToast(err.type === 'peer-unavailable' ? '코드가 없거나 만료됨' : '연결 실패: ' + err.message);
     document.getElementById('viewerInput').classList.remove('hidden');
     document.getElementById('viewerLive').classList.add('hidden');
   });
 }
 
-// Viewer needs a stream to initiate a call — use a blank canvas stream
 function getFakeStream() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1; canvas.height = 1;
-  return canvas.captureStream(1);
+  const c = document.createElement('canvas');
+  c.width = 1; c.height = 1;
+  return c.captureStream(1);
 }
 
 // ---- STOP ----
 function stopAll() {
-  if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if(conn) { conn.close(); conn = null; }
-  if(peer) { peer.destroy(); peer = null; }
-  // Reset UI
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (conn) { conn.close(); conn = null; }
+  if (peer) { peer.destroy(); peer = null; }
+  flashOn = false;
   document.getElementById('senderReady').classList.remove('hidden');
   document.getElementById('senderLive').classList.add('hidden');
   document.getElementById('viewerInput').classList.remove('hidden');
   document.getElementById('viewerLive').classList.add('hidden');
   document.getElementById('howTo').classList.remove('hidden');
   document.getElementById('codeInput').value = '';
+  if (document.getElementById('btnFlash')) document.getElementById('btnFlash').classList.remove('active');
   showToast('종료되었습니다');
 }
 
