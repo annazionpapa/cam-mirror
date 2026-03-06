@@ -220,12 +220,42 @@
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--border);
+    cursor: pointer;
+    transition: aspect-ratio 0.3s;
   }
+  .video-wrap.landscape { aspect-ratio: 16/9; }
+  .video-wrap:fullscreen,
+  .video-wrap:-webkit-full-screen {
+    border-radius: 0;
+    border: none;
+    aspect-ratio: auto;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+  }
+  .video-wrap:fullscreen video,
+  .video-wrap:-webkit-full-screen video {
+    object-fit: contain;
+  }
+  .video-wrap:fullscreen .fs-hint,
+  .video-wrap:-webkit-full-screen .fs-hint { display: none; }
   video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+  .fs-hint {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0.7;
   }
   .video-overlay {
     position: absolute;
@@ -467,12 +497,13 @@
       <div class="room-code" id="senderCode">----</div>
       <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요</div>
 
-      <div class="video-wrap" id="senderVideoWrap">
+      <div class="video-wrap" id="senderVideoWrap" onclick="toggleFullscreen(this)">
         <video id="localVideo" autoplay muted playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
         </div>
+        <div class="fs-hint">탭하여 전체화면</div>
       </div>
 
       <!-- Camera controls -->
@@ -515,12 +546,13 @@
 
     <div class="card hidden" id="viewerLive">
       <div class="card-title">실시간 화면</div>
-      <div class="video-wrap" id="viewerVideoWrap">
+      <div class="video-wrap" id="viewerVideoWrap" onclick="toggleFullscreen(this)">
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
         </div>
+        <div class="fs-hint">탭하여 전체화면</div>
       </div>
       <div class="status-row">
         <div class="status-dot connecting" id="viewerStatusDot"></div>
@@ -774,6 +806,27 @@ function stopAll() {
   if (document.getElementById('btnFlash')) document.getElementById('btnFlash').classList.remove('active');
   showToast('종료되었습니다');
 }
+
+// ---- FULLSCREEN ----
+function toggleFullscreen(wrap) {
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } else {
+    (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap);
+  }
+}
+
+// ---- AUTO ORIENTATION ----
+function updateOrientation() {
+  const isLandscape = window.innerWidth > window.innerHeight;
+  document.querySelectorAll('.video-wrap').forEach(w => {
+    // Don't change aspect ratio if in fullscreen
+    if (document.fullscreenElement === w || document.webkitFullscreenElement === w) return;
+    w.classList.toggle('landscape', isLandscape);
+  });
+}
+window.addEventListener('resize', updateOrientation);
+window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 100));
 
 // ---- TOAST ----
 function showToast(msg) {
