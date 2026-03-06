@@ -489,6 +489,57 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── Save bar ── */
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  }
+  .save-bar.visible { display: flex; }
+  .save-bar .save-info {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .save-bar .save-info small {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .save-bar .btn-save {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .save-bar .btn-dismiss {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -622,6 +673,15 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="save-bar" id="saveBar">
+  <div class="save-info">
+    <span id="saveFileName">녹화 파일</span>
+    <small id="saveFileSize">준비됨</small>
+  </div>
+  <button class="btn-save" onclick="saveRecording()">저장</button>
+  <button class="btn-dismiss" onclick="dismissSave()">✕</button>
+</div>
+
 <script>
 let peer = null;
 let localStream = null;
@@ -642,6 +702,8 @@ let animFrameId = null;
 // Recording
 let mediaRecorder = null;
 let recordedChunks = [];
+let pendingBlob = null;
+let pendingFileName = '';
 
 function setMode(mode) {
   currentMode = mode;
@@ -891,16 +953,12 @@ function toggleRecord() {
   };
 
   mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
-    showToast('Downloads 폴더에 저장됨');
+    pendingBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+    pendingFileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+    const sizeMB = (pendingBlob.size / 1024 / 1024).toFixed(1);
+    document.getElementById('saveFileName').textContent = pendingFileName;
+    document.getElementById('saveFileSize').textContent = sizeMB + ' MB';
+    document.getElementById('saveBar').classList.add('visible');
   };
 
   mediaRecorder.start(1000);
@@ -1114,6 +1172,31 @@ function updateOrientation() {
 }
 window.addEventListener('resize', updateOrientation);
 window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 100));
+
+// ---- SAVE RECORDING (user gesture → no Chrome prompt) ----
+function saveRecording() {
+  if (!pendingBlob) return;
+  const url = URL.createObjectURL(pendingBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pendingFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  pendingBlob = null;
+  pendingFileName = '';
+  document.getElementById('saveBar').classList.remove('visible');
+  showToast('Downloads 폴더에 저장됨');
+}
+
+function dismissSave() {
+  if (pendingBlob) URL.revokeObjectURL(URL.createObjectURL(pendingBlob));
+  pendingBlob = null;
+  pendingFileName = '';
+  document.getElementById('saveBar').classList.remove('visible');
+  showToast('녹화 파일 삭제됨');
+}
 
 // ---- TOAST ----
 function showToast(msg) {
