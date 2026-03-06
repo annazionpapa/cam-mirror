@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>캠미러 – 실시간 카메라 모니터링</title>
+<meta name="theme-color" content="#09090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>CamMirror - P2P Camera Mirroring</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -38,7 +43,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Header ── */
+  /* -- Header -- */
   .header {
     width: 100%;
     padding: 16px 20px;
@@ -62,8 +67,29 @@
     color: var(--muted);
     margin-left: 2px;
   }
-  .badge {
+  .header-actions {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .header-btn:hover { border-color: var(--muted); }
+  .header-btn.install-btn { display: none; font-size: 13px; font-weight: 700; width: auto; padding: 0 12px; font-family: inherit; color: var(--accent); border-color: rgba(16,185,129,0.3); background: var(--accent-glow); }
+  .badge {
     font-size: 11px;
     font-weight: 600;
     background: var(--accent-glow);
@@ -73,7 +99,7 @@
     border-radius: 20px;
   }
 
-  /* ── Main ── */
+  /* -- Main -- */
   .main {
     width: 100%;
     max-width: 440px;
@@ -81,7 +107,7 @@
     flex: 1;
   }
 
-  /* ── Mode selector ── */
+  /* -- Mode selector -- */
   .mode-selector {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -117,7 +143,7 @@
   .mode-btn.active .label { color: var(--text); }
   .mode-btn.active .sub { color: var(--accent); }
 
-  /* ── Card ── */
+  /* -- Card -- */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -134,7 +160,7 @@
     margin-bottom: 16px;
   }
 
-  /* ── Room code ── */
+  /* -- Room code -- */
   .room-code {
     font-size: 48px;
     font-weight: 800;
@@ -153,7 +179,38 @@
     line-height: 1.5;
   }
 
-  /* ── Input ── */
+  /* -- QR -- */
+  .qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .qr-toggle-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.15s;
+  }
+  .qr-toggle-btn:hover { border-color: var(--muted); }
+  .qr-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    max-width: 200px;
+    display: none;
+  }
+  .qr-box.visible { display: block; }
+  .qr-box img, .qr-box canvas { width: 100%; height: auto; display: block; border-radius: 6px; }
+
+  /* -- Input -- */
   .code-input input {
     width: 100%;
     background: var(--bg);
@@ -180,7 +237,30 @@
     font-weight: 400;
   }
 
-  /* ── Buttons ── */
+  /* -- Quality selector -- */
+  .quality-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .quality-btn {
+    flex: 1;
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .quality-btn:hover { border-color: var(--muted); }
+  .quality-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  /* -- Buttons -- */
   .btn {
     width: 100%;
     padding: 14px;
@@ -211,7 +291,7 @@
   }
   .btn-danger:hover { background: rgba(239,68,68,0.25); }
 
-  /* ── Video ── */
+  /* -- Video -- */
   .video-wrap {
     position: relative;
     width: 100%;
@@ -317,14 +397,14 @@
   }
   .rec-badge.visible { display: block; }
 
-  /* ── Camera controls ── */
+  /* -- Camera controls (3x2 grid) -- */
   .cam-controls {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
   .cam-btn {
-    flex: 1;
     padding: 10px 6px;
     border-radius: 10px;
     border: 1px solid var(--border);
@@ -343,7 +423,37 @@
   .cam-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); animation: blink 1s infinite; }
   .cam-btn .cam-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 
-  /* ── Zoom slider ── */
+  /* -- Remote controls (viewer) -- */
+  .remote-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+  .remote-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .remote-btn:hover { border-color: var(--muted); }
+  .remote-btn:active { transform: scale(0.97); }
+  .remote-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .remote-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); animation: blink 1s infinite; }
+  .remote-btn .r-icon { font-size: 15px; }
+
+  /* -- Zoom slider -- */
   .zoom-row {
     display: flex;
     align-items: center;
@@ -386,7 +496,7 @@
     text-align: right;
   }
 
-  /* ── Status ── */
+  /* -- Status -- */
   .status-row {
     display: flex;
     align-items: center;
@@ -409,7 +519,7 @@
   .status-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
   .status-dot.connecting { background: var(--warn); animation: blink 0.8s infinite; }
 
-  /* ── URL box ── */
+  /* -- URL box -- */
   .url-box {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -439,7 +549,7 @@
   }
   .url-box button:hover { background: var(--border); }
 
-  /* ── How-to ── */
+  /* -- How-to -- */
   .steps { list-style: none; padding: 0; }
   .steps li {
     display: flex;
@@ -467,7 +577,7 @@
     margin-top: 1px;
   }
 
-  /* ── Toast ── */
+  /* -- Toast -- */
   .toast {
     position: fixed;
     bottom: 30px;
@@ -489,7 +599,7 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ── Save bar ── */
+  /* -- Save bar -- */
   .save-bar {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -540,6 +650,149 @@
     cursor: pointer;
   }
 
+  /* -- Modal overlay -- */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-card .modal-icon { font-size: 36px; margin-bottom: 14px; }
+  .modal-card .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .modal-card .modal-desc {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .modal-card .modal-timer {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .modal-btns .btn { flex: 1; }
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .btn-secondary:hover { background: var(--border); }
+
+  /* -- Settings panel -- */
+  .settings-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1500;
+    display: none;
+  }
+  .settings-overlay.visible { display: block; }
+  .settings-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    z-index: 1501;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .settings-panel.visible { transform: translateY(0); }
+  .settings-panel .settings-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .settings-panel .settings-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .settings-group {
+    margin-bottom: 16px;
+  }
+  .settings-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .settings-group input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .settings-group input[type="text"]:focus { border-color: var(--accent); }
+  .settings-group .settings-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .settings-save-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -547,8 +800,12 @@
 
 <div class="header">
   <div class="logo">CamMirror</div>
-  <div class="logo-sub">실시간 카메라 미러링</div>
-  <div class="badge">P2P</div>
+  <div class="logo-sub">P2P Camera Mirroring</div>
+  <div class="header-actions">
+    <button class="header-btn install-btn" id="installBtn" onclick="installPWA()">Install</button>
+    <button class="header-btn" id="settingsBtn" onclick="openSettings()">&#9881;</button>
+    <div class="badge">P2P</div>
+  </div>
 </div>
 
 <div class="main">
@@ -556,12 +813,12 @@
   <!-- Mode selector -->
   <div class="mode-selector" id="modeSelector">
     <button class="mode-btn active" id="btnSender" onclick="setMode('sender')">
-      <span class="icon">📷</span>
+      <span class="icon">&#x1F4F7;</span>
       <span class="label">촬영 폰</span>
       <span class="sub">카메라 송출</span>
     </button>
     <button class="mode-btn" id="btnViewer" onclick="setMode('viewer')">
-      <span class="icon">📺</span>
+      <span class="icon">&#x1F4FA;</span>
       <span class="label">모니터 폰</span>
       <span class="sub">실시간 수신</span>
     </button>
@@ -571,6 +828,11 @@
   <div id="senderUI">
     <div class="card" id="senderReady">
       <div class="card-title">카메라 시작</div>
+      <div class="quality-selector" id="qualitySelector">
+        <button class="quality-btn" data-quality="480" onclick="selectQuality(this, 480)">저화질 480p</button>
+        <button class="quality-btn" data-quality="720" onclick="selectQuality(this, 720)">중간 720p</button>
+        <button class="quality-btn active" data-quality="1080" onclick="selectQuality(this, 1080)">고화질 1080p</button>
+      </div>
       <button class="btn btn-primary" onclick="startSender()">
         카메라 켜기 &amp; 코드 생성
       </button>
@@ -585,27 +847,42 @@
       <div class="room-code" id="senderCode">----</div>
       <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요</div>
 
+      <!-- QR Code -->
+      <div class="qr-container" id="qrContainer">
+        <button class="qr-toggle-btn" onclick="toggleQR()">QR 표시</button>
+        <div class="qr-box" id="qrBox"></div>
+      </div>
+
       <div class="video-wrap" id="senderVideoWrap">
         <video id="localVideo" autoplay muted playsinline></video>
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
-          <div class="rec-badge" id="senderRecBadge">● REC</div>
+          <div class="rec-badge" id="senderRecBadge">&#x25CF; REC</div>
         </div>
         <div class="fs-hint">탭하여 전체화면</div>
         <div class="zoom-indicator" id="senderZoomIndicator"></div>
       </div>
 
-      <!-- Camera controls -->
+      <!-- Camera controls (3x2) -->
       <div class="cam-controls">
         <button class="cam-btn" id="btnFlip" onclick="flipCamera()">
-          <span class="cam-icon">🔄</span>전환
+          <span class="cam-icon">&#x1F504;</span>전환
         </button>
         <button class="cam-btn" id="btnFlash" onclick="toggleFlash()">
-          <span class="cam-icon">🔦</span>플래시
+          <span class="cam-icon">&#x1F526;</span>플래시
         </button>
         <button class="cam-btn" id="btnRecord" onclick="toggleRecord()">
-          <span class="cam-icon">⏺</span>녹화
+          <span class="cam-icon">&#x23FA;</span>녹화
+        </button>
+        <button class="cam-btn" id="btnSnapshot" onclick="takeSnapshot()">
+          <span class="cam-icon">&#x1F4F8;</span>캡처
+        </button>
+        <button class="cam-btn" id="btnAudio" onclick="toggleAudio()">
+          <span class="cam-icon">&#x1F50A;</span>오디오
+        </button>
+        <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()">
+          <span class="cam-icon">&#x1F550;</span>시간
         </button>
       </div>
 
@@ -644,11 +921,23 @@
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
-          <div class="rec-badge" id="viewerRecBadge">● REC</div>
+          <div class="rec-badge" id="viewerRecBadge">&#x25CF; REC</div>
         </div>
         <div class="fs-hint">탭하여 전체화면</div>
         <div class="zoom-indicator" id="viewerZoomIndicator"></div>
       </div>
+
+      <!-- Remote controls -->
+      <div class="remote-controls" id="remoteControls">
+        <button class="remote-btn" onclick="sendRemoteControl('flip')"><span class="r-icon">&#x1F504;</span>전환</button>
+        <button class="remote-btn" onclick="sendRemoteControl('flash')"><span class="r-icon">&#x1F526;</span>플래시</button>
+        <button class="remote-btn" onclick="sendRemoteControl('zoomIn')"><span class="r-icon">&#x1F50D;</span>줌+</button>
+        <button class="remote-btn" onclick="sendRemoteControl('zoomOut')"><span class="r-icon">&#x1F50E;</span>줌-</button>
+        <button class="remote-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="r-icon">&#x23FA;</span>녹화</button>
+        <button class="remote-btn" onclick="sendRemoteControl('snapshot')"><span class="r-icon">&#x1F4F8;</span>캡처</button>
+        <button class="remote-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="r-icon">&#x1F50A;</span>오디오</button>
+      </div>
+
       <div class="status-row">
         <div class="status-dot connecting" id="viewerStatusDot"></div>
         <span id="viewerStatusText">연결 중...</span>
@@ -665,10 +954,47 @@
       <li><div class="step-num">2</div><span><b>카메라 켜기</b>를 누르면 4자리 코드가 생성됩니다</span></li>
       <li><div class="step-num">3</div><span><b>모니터 폰</b>에서 같은 페이지를 열고 <b>모니터 폰</b>을 선택하세요</span></li>
       <li><div class="step-num">4</div><span>4자리 코드를 입력하고 <b>연결하기</b>를 누르세요</span></li>
-      <li><div class="step-num">✓</div><span>후면/전면 전환, 줌, 플래시를 사용할 수 있습니다</span></li>
+      <li><div class="step-num">&#x2713;</div><span>전환, 줌, 플래시, 녹화, 캡처, 오디오 등을 사용할 수 있습니다</span></li>
     </ul>
   </div>
 
+</div>
+
+<!-- Connection Approval Modal -->
+<div class="modal-overlay" id="approvalModal">
+  <div class="modal-card">
+    <div class="modal-icon">&#x1F4F1;</div>
+    <div class="modal-title">연결 요청</div>
+    <div class="modal-desc">새 기기가 연결을 요청합니다.<br>허용하시겠습니까?</div>
+    <div class="modal-timer" id="approvalTimer">30초 후 자동 허용</div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="rejectPendingCall()">거부</button>
+      <button class="btn btn-primary" onclick="approvePendingCall()">허용</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-title">
+    <span>&#9881; TURN 서버 설정</span>
+    <button class="settings-close" onclick="closeSettings()">&#x2715;</button>
+  </div>
+  <div class="settings-group">
+    <label>TURN 서버 URL</label>
+    <input type="text" id="turnUrl" placeholder="turn:your-server.com:3478">
+    <div class="settings-hint">예: turn:myserver.com:3478</div>
+  </div>
+  <div class="settings-group">
+    <label>사용자 이름</label>
+    <input type="text" id="turnUser" placeholder="username">
+  </div>
+  <div class="settings-group">
+    <label>비밀번호</label>
+    <input type="text" id="turnCred" placeholder="credential">
+  </div>
+  <button class="settings-save-btn" onclick="saveSettings()">저장</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -679,32 +1005,109 @@
     <small id="saveFileSize">준비됨</small>
   </div>
   <button class="btn-save" onclick="saveRecording()">저장</button>
-  <button class="btn-dismiss" onclick="dismissSave()">✕</button>
+  <button class="btn-dismiss" onclick="dismissSave()">&#x2715;</button>
 </div>
 
 <script>
+// ============================================================
+// STATE
+// ============================================================
 let peer = null;
 let localStream = null;
+let audioStream = null;
+let combinedStream = null;
 let currentMode = 'sender';
-let conn = null;
-let dataConn = null; // PeerJS 데이터 채널 (녹화 상태 전송용)
 let currentFacing = 'environment';
 let flashOn = false;
+let audioOn = false;
+let timestampOn = false;
 let hasHardwareZoom = false;
+let selectedQuality = 1080;
+let qrVisible = false;
 
-// Canvas zoom pipeline — 줌된 영상을 WebRTC로 전송
+// Canvas zoom pipeline
 let renderCanvas = null;
 let renderCtx = null;
 let canvasStream = null;
 let softwareZoom = 1;
 let animFrameId = null;
+let canvasSizeSet = false;
+
+// Canvas bypass optimization
+let useCanvasPipeline = false;
 
 // Recording
 let mediaRecorder = null;
 let recordedChunks = [];
 let pendingBlob = null;
 let pendingFileName = '';
+let isStopping = false;
 
+// Multi-viewer support
+let viewers = []; // {call, dataConn}
+
+// Viewer side
+let viewerCall = null;
+let viewerDataConn = null;
+let viewerCode = '';
+let viewerReconnectTimer = null;
+let viewerReconnectAttempts = 0;
+const VIEWER_MAX_RETRIES = 10;
+
+// Connection approval
+let pendingIncomingCall = null;
+let approvalTimeout = null;
+
+// Wake lock
+let wakeLockSentinel = null;
+
+// Code collision retry
+let codeRetryCount = 0;
+const MAX_CODE_RETRIES = 5;
+let currentRoomCode = '';
+
+// PWA
+let deferredInstallPrompt = null;
+
+// ICE Config
+const ICE_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' }
+  ]
+};
+
+function getIceConfig() {
+  const config = { iceServers: [...ICE_CONFIG.iceServers] };
+  const turnUrl = localStorage.getItem('turnUrl');
+  const turnUser = localStorage.getItem('turnUser');
+  const turnCred = localStorage.getItem('turnCred');
+  if (turnUrl) {
+    config.iceServers.push({
+      urls: turnUrl,
+      username: turnUser || '',
+      credential: turnCred || ''
+    });
+  }
+  return config;
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// MODE
+// ============================================================
 function setMode(mode) {
   currentMode = mode;
   document.getElementById('btnSender').classList.toggle('active', mode === 'sender');
@@ -713,40 +1116,174 @@ function setMode(mode) {
   document.getElementById('viewerUI').classList.toggle('hidden', mode !== 'viewer');
 }
 
-// Share URL
-window.addEventListener('load', () => {
-  document.getElementById('shareUrlText').textContent = location.href;
-});
-
+// ============================================================
+// URL / COPY
+// ============================================================
 function copyUrl() {
   navigator.clipboard.writeText(location.href).then(() => showToast('URL 복사됨!'));
 }
 
-// ---- CANVAS RENDER LOOP ----
+// ============================================================
+// QUALITY SELECTOR
+// ============================================================
+function selectQuality(btn, q) {
+  selectedQuality = q;
+  document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getVideoConstraints() {
+  const dims = { 480: { w: 640, h: 480 }, 720: { w: 1280, h: 720 }, 1080: { w: 1920, h: 1080 } };
+  const d = dims[selectedQuality] || dims[1080];
+  return {
+    facingMode: currentFacing,
+    width: { ideal: d.w },
+    height: { ideal: d.h }
+  };
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function openSettings() {
+  document.getElementById('turnUrl').value = localStorage.getItem('turnUrl') || '';
+  document.getElementById('turnUser').value = localStorage.getItem('turnUser') || '';
+  document.getElementById('turnCred').value = localStorage.getItem('turnCred') || '';
+  document.getElementById('settingsOverlay').classList.add('visible');
+  document.getElementById('settingsPanel').classList.add('visible');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('visible');
+  document.getElementById('settingsPanel').classList.remove('visible');
+}
+
+function saveSettings() {
+  localStorage.setItem('turnUrl', document.getElementById('turnUrl').value.trim());
+  localStorage.setItem('turnUser', document.getElementById('turnUser').value.trim());
+  localStorage.setItem('turnCred', document.getElementById('turnCred').value.trim());
+  closeSettings();
+  showToast('TURN 서버 설정 저장됨');
+}
+
+// ============================================================
+// QR CODE
+// ============================================================
+function generateQR(code) {
+  const url = 'https://cam-mirror.vercel.app?code=' + code + '&mode=viewer';
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  const qrBox = document.getElementById('qrBox');
+  qrBox.innerHTML = qr.createImgTag(5, 0);
+}
+
+function toggleQR() {
+  qrVisible = !qrVisible;
+  const btn = document.querySelector('.qr-toggle-btn');
+  const box = document.getElementById('qrBox');
+  if (qrVisible) {
+    box.classList.add('visible');
+    btn.textContent = 'QR 숨기기';
+  } else {
+    box.classList.remove('visible');
+    btn.textContent = 'QR 표시';
+  }
+}
+
+// ============================================================
+// WAKE LOCK
+// ============================================================
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request('screen');
+    wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+  } catch (e) { /* ignore */ }
+}
+
+function releaseWakeLock() {
+  if (wakeLockSentinel) {
+    wakeLockSentinel.release();
+    wakeLockSentinel = null;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && localStream && currentMode === 'sender') {
+    requestWakeLock();
+  }
+});
+
+// ============================================================
+// CANVAS PIPELINE
+// ============================================================
+function shouldUseCanvas() {
+  return softwareZoom > 1.01 || timestampOn;
+}
+
 function startRenderLoop() {
   const video = document.getElementById('localVideo');
   renderCanvas = document.createElement('canvas');
   renderCtx = renderCanvas.getContext('2d');
+  canvasSizeSet = false;
+
+  video.addEventListener('loadedmetadata', () => {
+    if (renderCanvas && video.videoWidth > 0) {
+      renderCanvas.width = video.videoWidth;
+      renderCanvas.height = video.videoHeight;
+      canvasSizeSet = true;
+    }
+  }, { once: true });
 
   function drawFrame() {
     if (!localStream || !video.videoWidth) {
       animFrameId = requestAnimationFrame(drawFrame);
       return;
     }
-    renderCanvas.width = video.videoWidth;
-    renderCanvas.height = video.videoHeight;
+
+    if (!canvasSizeSet) {
+      renderCanvas.width = video.videoWidth;
+      renderCanvas.height = video.videoHeight;
+      canvasSizeSet = true;
+    }
 
     const z = softwareZoom;
-    if (z <= 1.01) {
+    if (z <= 1.01 && !timestampOn) {
       renderCtx.drawImage(video, 0, 0);
-    } else {
-      // 중앙 크롭으로 줌 효과
+    } else if (z > 1.01) {
       const sw = video.videoWidth / z;
       const sh = video.videoHeight / z;
       const sx = (video.videoWidth - sw) / 2;
       const sy = (video.videoHeight - sh) / 2;
       renderCtx.drawImage(video, sx, sy, sw, sh, 0, 0, renderCanvas.width, renderCanvas.height);
+    } else {
+      renderCtx.drawImage(video, 0, 0);
     }
+
+    // Timestamp overlay
+    if (timestampOn) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const h = String(now.getHours()).padStart(2, '0');
+      const mi = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const ts = y + '년 ' + mo + '월 ' + d + '일 ' + h + ':' + mi + ':' + s;
+
+      const fontSize = Math.max(16, Math.floor(renderCanvas.width / 30));
+      renderCtx.font = '600 ' + fontSize + 'px Inter, sans-serif';
+      renderCtx.fillStyle = 'rgba(0,0,0,0.5)';
+      const textW = renderCtx.measureText(ts).width;
+      const pad = fontSize * 0.4;
+      const tx = pad * 2;
+      const ty = renderCanvas.height - pad * 2;
+      renderCtx.fillRect(tx - pad, ty - fontSize - pad * 0.3, textW + pad * 2, fontSize + pad);
+      renderCtx.fillStyle = '#ffffff';
+      renderCtx.fillText(ts, tx, ty);
+    }
+
     animFrameId = requestAnimationFrame(drawFrame);
   }
 
@@ -762,9 +1299,62 @@ function stopRenderLoop() {
   canvasStream = null;
   renderCanvas = null;
   renderCtx = null;
+  canvasSizeSet = false;
 }
 
-// ---- SENDER ----
+// Get the stream to send over WebRTC
+function getOutgoingStream() {
+  if (shouldUseCanvas()) {
+    useCanvasPipeline = true;
+    // Ensure canvas pipeline is running
+    if (!canvasStream) startRenderLoop();
+    // Combine canvas video + audio if available
+    if (audioOn && audioStream) {
+      const combined = new MediaStream();
+      canvasStream.getVideoTracks().forEach(t => combined.addTrack(t));
+      audioStream.getAudioTracks().forEach(t => combined.addTrack(t));
+      return combined;
+    }
+    return canvasStream;
+  } else {
+    useCanvasPipeline = false;
+    if (audioOn && audioStream && localStream) {
+      const combined = new MediaStream();
+      localStream.getVideoTracks().forEach(t => combined.addTrack(t));
+      audioStream.getAudioTracks().forEach(t => combined.addTrack(t));
+      return combined;
+    }
+    return localStream;
+  }
+}
+
+// Switch track on all viewers when pipeline changes
+function updateAllViewerTracks() {
+  const outgoing = getOutgoingStream();
+  if (!outgoing) return;
+  const videoTrack = outgoing.getVideoTracks()[0];
+  const audioTrack = outgoing.getAudioTracks()[0] || null;
+
+  viewers.forEach(v => {
+    if (v.call && v.call.peerConnection) {
+      const senders = v.call.peerConnection.getSenders();
+      senders.forEach(sender => {
+        if (sender.track && sender.track.kind === 'video' && videoTrack) {
+          sender.replaceTrack(videoTrack).catch(() => {});
+        }
+        if (sender.track && sender.track.kind === 'audio' && audioTrack) {
+          sender.replaceTrack(audioTrack).catch(() => {});
+        }
+      });
+      // If no audio sender exists but we have audio now, we can't add track easily
+      // PeerJS doesn't expose addTrack — just log
+    }
+  });
+}
+
+// ============================================================
+// SENDER
+// ============================================================
 async function startSender() {
   await openCamera(currentFacing);
   if (!localStream) return;
@@ -774,66 +1364,243 @@ async function startSender() {
 
   setupZoom();
 
-  // 캔버스 렌더 루프 시작 (줌된 영상 전송용)
   softwareZoom = 1;
+  timestampOn = false;
+  audioOn = false;
+  document.getElementById('btnTimestamp').classList.remove('active');
+  document.getElementById('btnAudio').classList.remove('active');
+
+  // Start canvas render loop (needed for zoom/timestamp)
   startRenderLoop();
 
-  const code = String(Math.floor(1000 + Math.random() * 9000));
+  // Wake lock
+  requestWakeLock();
+
+  currentRoomCode = String(Math.floor(1000 + Math.random() * 9000));
+  codeRetryCount = 0;
+  createSenderPeer(currentRoomCode);
+}
+
+function createSenderPeer(code) {
   document.getElementById('senderCode').textContent = code;
 
+  const iceConfig = getIceConfig();
   peer = new Peer('cm-' + code, {
-    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0
+    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0,
+    config: iceConfig
   });
 
   peer.on('open', () => {
     document.getElementById('senderReady').classList.add('hidden');
     document.getElementById('senderLive').classList.remove('hidden');
     document.getElementById('howTo').classList.add('hidden');
-    updateSenderStatus(false);
+    updateSenderStatus();
+    generateQR(code);
   });
 
   peer.on('call', (call) => {
-    call.answer(canvasStream);
-    conn = call;
-    updateSenderStatus(true);
-    call.on('close', () => updateSenderStatus(false));
+    showApprovalModal(call);
   });
 
-  // 뷰어로부터 데이터 연결 수신
   peer.on('connection', (dc) => {
-    dataConn = dc;
-    // 연결 시 현재 녹화 상태 전송
+    // Store data connection temporarily; will be associated with viewer on approval
     dc.on('open', () => {
+      // Send current recording state
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         dc.send({ type: 'rec', recording: true });
       }
+      dc.send({ type: 'viewerCount', count: viewers.length });
     });
+    dc.on('data', (msg) => {
+      handleRemoteControl(msg, dc);
+    });
+    dc.on('close', () => {
+      removeViewerByDataConn(dc);
+    });
+    // Tentatively add data connection, we'll match it later
+    const existingViewer = viewers.find(v => !v.dataConn);
+    if (existingViewer) {
+      existingViewer.dataConn = dc;
+    } else {
+      viewers.push({ call: null, dataConn: dc });
+    }
+  });
+
+  peer.on('disconnected', () => {
+    // Sender reconnect: try to recreate with same ID
+    if (peer && !peer.destroyed) {
+      showToast('연결 끊김, 재연결 중...');
+      setTimeout(() => {
+        if (peer && !peer.destroyed) {
+          peer.reconnect();
+        }
+      }, 2000);
+    }
   });
 
   peer.on('error', (err) => {
     if (err.type === 'unavailable-id') {
-      showToast('코드 충돌! 다시 시도해주세요');
-      stopAll();
+      if (codeRetryCount < MAX_CODE_RETRIES) {
+        codeRetryCount++;
+        showToast('코드 재생성 중... (' + codeRetryCount + '/' + MAX_CODE_RETRIES + ')');
+        if (peer) { peer.destroy(); peer = null; }
+        currentRoomCode = String(Math.floor(1000 + Math.random() * 9000));
+        setTimeout(() => createSenderPeer(currentRoomCode), 500);
+      } else {
+        showToast('코드 생성 실패. 다시 시도해주세요');
+        stopAll();
+      }
     } else {
       showToast('오류: ' + err.message);
     }
   });
 }
 
+// ============================================================
+// CONNECTION APPROVAL
+// ============================================================
+function showApprovalModal(call) {
+  pendingIncomingCall = call;
+  const modal = document.getElementById('approvalModal');
+  modal.classList.add('visible');
+
+  let countdown = 30;
+  const timerEl = document.getElementById('approvalTimer');
+  timerEl.textContent = countdown + '초 후 자동 허용';
+
+  clearInterval(approvalTimeout);
+  approvalTimeout = setInterval(() => {
+    countdown--;
+    timerEl.textContent = countdown + '초 후 자동 허용';
+    if (countdown <= 0) {
+      clearInterval(approvalTimeout);
+      approvePendingCall();
+    }
+  }, 1000);
+}
+
+function approvePendingCall() {
+  clearInterval(approvalTimeout);
+  document.getElementById('approvalModal').classList.remove('visible');
+
+  if (!pendingIncomingCall) return;
+  const call = pendingIncomingCall;
+  pendingIncomingCall = null;
+
+  const outgoing = getOutgoingStream();
+  call.answer(outgoing);
+
+  // Find or create viewer entry
+  let viewer = viewers.find(v => v.call === null);
+  if (viewer) {
+    viewer.call = call;
+  } else {
+    viewer = { call: call, dataConn: null };
+    viewers.push(viewer);
+  }
+
+  call.on('close', () => {
+    removeViewerByCall(call);
+  });
+
+  updateSenderStatus();
+  showToast('연결 허용됨');
+  broadcastViewerCount();
+}
+
+function rejectPendingCall() {
+  clearInterval(approvalTimeout);
+  document.getElementById('approvalModal').classList.remove('visible');
+  if (pendingIncomingCall) {
+    pendingIncomingCall.close();
+    pendingIncomingCall = null;
+  }
+  showToast('연결 거부됨');
+}
+
+function removeViewerByCall(call) {
+  viewers = viewers.filter(v => v.call !== call);
+  updateSenderStatus();
+  broadcastViewerCount();
+}
+
+function removeViewerByDataConn(dc) {
+  viewers = viewers.filter(v => v.dataConn !== dc);
+  updateSenderStatus();
+  broadcastViewerCount();
+}
+
+function broadcastToViewers(msg) {
+  viewers.forEach(v => {
+    if (v.dataConn && v.dataConn.open) {
+      try { v.dataConn.send(msg); } catch(e) {}
+    }
+  });
+}
+
+function broadcastViewerCount() {
+  const count = viewers.filter(v => v.call).length;
+  broadcastToViewers({ type: 'viewerCount', count: count });
+}
+
+// ============================================================
+// HANDLE REMOTE CONTROL FROM VIEWER
+// ============================================================
+function handleRemoteControl(msg, dc) {
+  if (!msg || msg.type !== 'control') return;
+  switch (msg.action) {
+    case 'flip': flipCamera(); break;
+    case 'flash': toggleFlash(); break;
+    case 'zoomIn': {
+      const slider = document.getElementById('zoomSlider');
+      const newVal = Math.min(parseFloat(slider.value) + 0.5, parseFloat(slider.max));
+      slider.value = newVal;
+      applyZoom(newVal);
+      break;
+    }
+    case 'zoomOut': {
+      const slider = document.getElementById('zoomSlider');
+      const newVal = Math.max(parseFloat(slider.value) - 0.5, parseFloat(slider.min));
+      slider.value = newVal;
+      applyZoom(newVal);
+      break;
+    }
+    case 'record': toggleRecord(); break;
+    case 'snapshot': takeSnapshot(); break;
+    case 'audio': toggleAudio(); break;
+  }
+}
+
+// ============================================================
+// SENDER STATUS (multi-viewer)
+// ============================================================
+function updateSenderStatus() {
+  const dot = document.getElementById('senderStatusDot');
+  const txt = document.getElementById('senderStatusText');
+  const count = viewers.filter(v => v.call).length;
+  if (count > 0) {
+    dot.classList.add('on');
+    dot.classList.remove('connecting');
+    txt.textContent = '모니터 ' + count + '대 연결됨';
+  } else {
+    dot.classList.remove('on');
+    txt.textContent = '모니터 연결 대기 중...';
+  }
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
 async function openCamera(facing) {
   try {
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
     }
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: facing,
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
-      },
+      video: Object.assign(getVideoConstraints(), { facingMode: facing }),
       audio: false
     });
-  } catch(e) {
+  } catch (e) {
     showToast('카메라 권한을 허용해주세요');
     localStream = null;
   }
@@ -851,9 +1618,11 @@ async function flipCamera() {
   setupZoom();
   softwareZoom = 1;
   document.getElementById('localVideo').style.transform = '';
+  document.getElementById('zoomSlider').value = 1;
+  document.getElementById('zoomVal').textContent = '1.0x';
 
-  // 캔버스 렌더 루프가 자동으로 새 카메라 소스를 읽음
-  // replaceTrack 불필요 (캔버스 스트림이 계속 전송됨)
+  // Canvas render loop reads from video element — auto-updates
+  updatePipelineState();
 
   showToast(currentFacing === 'environment' ? '후면 카메라' : '전면 카메라');
 }
@@ -908,28 +1677,138 @@ function applyZoom(val) {
     const caps = track.getCapabilities();
     const display = ((val - caps.zoom.min) / (caps.zoom.max - caps.zoom.min) * 9 + 1).toFixed(1);
     document.getElementById('zoomVal').textContent = display + 'x';
-    // 하드웨어 줌은 트랙 자체가 변경되므로 캔버스가 자동 반영
   } else {
     softwareZoom = val;
-    // 로컬 프리뷰용 CSS + 캔버스를 통해 미러링에도 전달
     document.getElementById('localVideo').style.transform = 'scale(' + val + ')';
     document.getElementById('zoomVal').textContent = val.toFixed(1) + 'x';
+    updatePipelineState();
   }
 }
 
-// ---- RECORDING ----
+// ============================================================
+// AUDIO TOGGLE
+// ============================================================
+async function toggleAudio() {
+  if (audioOn) {
+    // Disable audio
+    audioOn = false;
+    if (audioStream) {
+      audioStream.getTracks().forEach(t => t.stop());
+      audioStream = null;
+    }
+    document.getElementById('btnAudio').classList.remove('active');
+    showToast('오디오 OFF');
+    updatePipelineState();
+    return;
+  }
+
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioOn = true;
+    document.getElementById('btnAudio').classList.add('active');
+    showToast('오디오 ON');
+    updatePipelineState();
+  } catch (e) {
+    showToast('마이크 권한을 허용해주세요');
+  }
+}
+
+// ============================================================
+// TIMESTAMP TOGGLE
+// ============================================================
+function toggleTimestamp() {
+  timestampOn = !timestampOn;
+  document.getElementById('btnTimestamp').classList.toggle('active', timestampOn);
+  showToast(timestampOn ? '타임스탬프 ON' : '타임스탬프 OFF');
+  updatePipelineState();
+}
+
+// ============================================================
+// PIPELINE STATE UPDATE
+// Canvas bypass: when zoom === 1 AND timestamp off, send original stream
+// ============================================================
+function updatePipelineState() {
+  const needCanvas = shouldUseCanvas();
+  if (needCanvas && !canvasStream) {
+    // Need to start canvas pipeline
+    startRenderLoop();
+  }
+
+  // ReplaceTrack on all viewers
+  updateAllViewerTracks();
+}
+
+// ============================================================
+// SNAPSHOT
+// ============================================================
+function takeSnapshot() {
+  if (!localStream && !canvasStream) {
+    showToast('카메라를 먼저 켜주세요');
+    return;
+  }
+
+  let snapCanvas;
+  if (renderCanvas && renderCtx) {
+    // Use the render canvas (has zoom + timestamp)
+    snapCanvas = document.createElement('canvas');
+    snapCanvas.width = renderCanvas.width;
+    snapCanvas.height = renderCanvas.height;
+    const ctx = snapCanvas.getContext('2d');
+    ctx.drawImage(renderCanvas, 0, 0);
+  } else {
+    const video = document.getElementById('localVideo');
+    snapCanvas = document.createElement('canvas');
+    snapCanvas.width = video.videoWidth;
+    snapCanvas.height = video.videoHeight;
+    const ctx = snapCanvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+  }
+
+  snapCanvas.toBlob(function(blob) {
+    if (!blob) { showToast('캡처 실패'); return; }
+    pendingBlob = blob;
+    pendingFileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.png';
+    const sizeKB = (blob.size / 1024).toFixed(0);
+    document.getElementById('saveFileName').textContent = pendingFileName;
+    document.getElementById('saveFileSize').textContent = sizeKB + ' KB';
+    document.getElementById('saveBar').classList.add('visible');
+    showToast('캡처 완료');
+  }, 'image/png');
+}
+
+// ============================================================
+// RECORDING
+// ============================================================
 function toggleRecord() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
+    isStopping = true;
     mediaRecorder.stop();
     document.getElementById('btnRecord').classList.remove('recording');
     document.getElementById('senderRecBadge').classList.remove('visible');
-    if (dataConn && dataConn.open) dataConn.send({ type: 'rec', recording: false });
+    broadcastToViewers({ type: 'rec', recording: false });
     showToast('녹화 종료 · 저장 중...');
     return;
   }
 
-  const stream = canvasStream;
-  if (!stream) { showToast('카메라를 먼저 켜주세요'); return; }
+  // Choose stream to record: canvas if active, combined otherwise
+  const outgoing = getOutgoingStream();
+  if (!outgoing) { showToast('카메라를 먼저 켜주세요'); return; }
+
+  // Build a recording stream with audio if available
+  let recStream;
+  if (canvasStream && shouldUseCanvas()) {
+    recStream = new MediaStream();
+    canvasStream.getVideoTracks().forEach(t => recStream.addTrack(t));
+    if (audioOn && audioStream) {
+      audioStream.getAudioTracks().forEach(t => recStream.addTrack(t));
+    }
+  } else {
+    recStream = new MediaStream();
+    if (localStream) localStream.getVideoTracks().forEach(t => recStream.addTrack(t));
+    if (audioOn && audioStream) {
+      audioStream.getAudioTracks().forEach(t => recStream.addTrack(t));
+    }
+  }
 
   recordedChunks = [];
 
@@ -942,7 +1821,7 @@ function toggleRecord() {
   }
 
   try {
-    mediaRecorder = new MediaRecorder(stream, options);
+    mediaRecorder = new MediaRecorder(recStream, options);
   } catch (e) {
     showToast('녹화를 지원하지 않는 브라우저입니다');
     return;
@@ -953,58 +1832,96 @@ function toggleRecord() {
   };
 
   mediaRecorder.onstop = () => {
-    pendingBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+    const mime = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'video/webm';
+    pendingBlob = new Blob(recordedChunks, { type: mime });
     pendingFileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
     const sizeMB = (pendingBlob.size / 1024 / 1024).toFixed(1);
     document.getElementById('saveFileName').textContent = pendingFileName;
     document.getElementById('saveFileSize').textContent = sizeMB + ' MB';
     document.getElementById('saveBar').classList.add('visible');
+    // Now it's safe to null out
+    mediaRecorder = null;
+    isStopping = false;
   };
 
+  isStopping = false;
   mediaRecorder.start(1000);
   document.getElementById('btnRecord').classList.add('recording');
   document.getElementById('senderRecBadge').classList.add('visible');
-  if (dataConn && dataConn.open) dataConn.send({ type: 'rec', recording: true });
+  broadcastToViewers({ type: 'rec', recording: true });
   showToast('녹화 시작');
 }
 
-function updateSenderStatus(connected) {
-  const dot = document.getElementById('senderStatusDot');
-  const txt = document.getElementById('senderStatusText');
-  if (connected) {
-    dot.classList.add('on');
-    dot.classList.remove('connecting');
-    txt.textContent = '모니터 폰 연결됨';
-  } else {
-    dot.classList.remove('on');
-    txt.textContent = '모니터 연결 대기 중...';
-  }
+// ============================================================
+// SAVE RECORDING / SNAPSHOT
+// ============================================================
+function saveRecording() {
+  if (!pendingBlob) return;
+  const url = URL.createObjectURL(pendingBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pendingFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  pendingBlob = null;
+  pendingFileName = '';
+  document.getElementById('saveBar').classList.remove('visible');
+  showToast('저장됨');
 }
 
-// ---- VIEWER ----
+function dismissSave() {
+  // Bug fix: removed meaningless URL.createObjectURL call
+  pendingBlob = null;
+  pendingFileName = '';
+  document.getElementById('saveBar').classList.remove('visible');
+  showToast('파일 삭제됨');
+}
+
+// ============================================================
+// VIEWER
+// ============================================================
 function startViewer() {
   const code = document.getElementById('codeInput').value.trim();
   if (code.length !== 4) { showToast('4자리 코드를 입력해주세요'); return; }
+
+  viewerCode = code;
+  viewerReconnectAttempts = 0;
 
   document.getElementById('viewerInput').classList.add('hidden');
   document.getElementById('viewerLive').classList.remove('hidden');
   document.getElementById('howTo').classList.add('hidden');
 
+  connectViewer(code);
+}
+
+function connectViewer(code) {
+  const iceConfig = getIceConfig();
   peer = new Peer({
-    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0
+    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0,
+    config: iceConfig
   });
 
   peer.on('open', () => {
-    // 데이터 채널 연결 (녹화 상태 수신용)
-    dataConn = peer.connect('cm-' + code);
-    dataConn.on('data', (msg) => {
+    // Data channel for receiving recording status & sending controls
+    viewerDataConn = peer.connect('cm-' + code);
+    viewerDataConn.on('data', (msg) => {
       if (msg && msg.type === 'rec') {
         document.getElementById('viewerRecBadge').classList.toggle('visible', msg.recording);
+        const remRecBtn = document.getElementById('remoteRecBtn');
+        if (remRecBtn) remRecBtn.classList.toggle('recording', msg.recording);
       }
+      if (msg && msg.type === 'viewerCount') {
+        // could display but optional
+      }
+    });
+    viewerDataConn.on('close', () => {
+      // Data channel closed
     });
 
     const call = peer.call('cm-' + code, getFakeStream());
-    conn = call;
+    viewerCall = call;
     call.on('stream', (remoteStream) => {
       document.getElementById('remoteVideo').srcObject = remoteStream;
       const dot = document.getElementById('viewerStatusDot');
@@ -1013,19 +1930,69 @@ function startViewer() {
       dot.classList.remove('connecting');
       txt.textContent = '연결됨 · 실시간 수신 중';
       showToast('연결 성공!');
+      viewerReconnectAttempts = 0;
     });
     call.on('close', () => {
       document.getElementById('viewerStatusText').textContent = '연결 끊김';
-      showToast('연결이 끊겼습니다');
+      const dot = document.getElementById('viewerStatusDot');
+      dot.classList.remove('on');
+      dot.classList.add('connecting');
+      // Auto-reconnect
+      attemptViewerReconnect();
     });
-    call.on('error', () => showToast('연결 실패. 코드를 확인해주세요'));
+    call.on('error', () => {
+      showToast('연결 실패. 코드를 확인해주세요');
+      attemptViewerReconnect();
+    });
   });
 
   peer.on('error', (err) => {
-    showToast(err.type === 'peer-unavailable' ? '코드가 없거나 만료됨' : '연결 실패: ' + err.message);
-    document.getElementById('viewerInput').classList.remove('hidden');
-    document.getElementById('viewerLive').classList.add('hidden');
+    if (err.type === 'peer-unavailable') {
+      showToast('코드가 없거나 만료됨');
+      attemptViewerReconnect();
+    } else {
+      showToast('연결 실패: ' + err.message);
+      attemptViewerReconnect();
+    }
   });
+
+  peer.on('disconnected', () => {
+    attemptViewerReconnect();
+  });
+}
+
+function attemptViewerReconnect() {
+  if (!viewerCode) return;
+  if (viewerReconnectAttempts >= VIEWER_MAX_RETRIES) {
+    showToast('재연결 실패. 다시 시도해주세요');
+    document.getElementById('viewerStatusText').textContent = '재연결 실패';
+    document.getElementById('viewerStatusDot').classList.remove('connecting', 'on');
+    return;
+  }
+
+  viewerReconnectAttempts++;
+  const delay = Math.min(1000 * Math.pow(2, viewerReconnectAttempts - 1), 8000);
+
+  document.getElementById('viewerStatusText').textContent = '재연결 중... (' + viewerReconnectAttempts + '/' + VIEWER_MAX_RETRIES + ')';
+  document.getElementById('viewerStatusDot').classList.remove('on');
+  document.getElementById('viewerStatusDot').classList.add('connecting');
+
+  clearTimeout(viewerReconnectTimer);
+  viewerReconnectTimer = setTimeout(() => {
+    // Clean up old peer
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    viewerCall = null;
+    viewerDataConn = null;
+    connectViewer(viewerCode);
+  }, delay);
+}
+
+function sendRemoteControl(action) {
+  if (viewerDataConn && viewerDataConn.open) {
+    viewerDataConn.send({ type: 'control', action: action });
+  } else {
+    showToast('송출 폰과 연결되지 않았습니다');
+  }
 }
 
 function getFakeStream() {
@@ -1034,20 +2001,52 @@ function getFakeStream() {
   return c.captureStream(1);
 }
 
-// ---- STOP ----
+// ============================================================
+// STOP ALL
+// ============================================================
 function stopAll() {
+  // Recording: use flag to avoid race condition
   if (mediaRecorder && mediaRecorder.state === 'recording') {
+    isStopping = true;
     mediaRecorder.stop();
+    // Don't null mediaRecorder here — onstop callback will do it
+  } else {
+    mediaRecorder = null;
   }
-  mediaRecorder = null;
+
   stopRenderLoop();
   softwareZoom = 1;
 
   if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if (dataConn) { dataConn.close(); dataConn = null; }
-  if (conn) { conn.close(); conn = null; }
-  if (peer) { peer.destroy(); peer = null; }
+  if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  audioOn = false;
+  timestampOn = false;
+
+  // Close all viewers
+  viewers.forEach(v => {
+    if (v.dataConn) try { v.dataConn.close(); } catch(e){}
+    if (v.call) try { v.call.close(); } catch(e){}
+  });
+  viewers = [];
+
+  // Viewer side cleanup
+  if (viewerDataConn) { try { viewerDataConn.close(); } catch(e){} viewerDataConn = null; }
+  if (viewerCall) { try { viewerCall.close(); } catch(e){} viewerCall = null; }
+  clearTimeout(viewerReconnectTimer);
+  viewerCode = '';
+  viewerReconnectAttempts = 0;
+
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+
   flashOn = false;
+  pendingIncomingCall = null;
+  clearInterval(approvalTimeout);
+  document.getElementById('approvalModal').classList.remove('visible');
+
+  // Wake lock release
+  releaseWakeLock();
+
+  // Reset UI
   document.getElementById('senderReady').classList.remove('hidden');
   document.getElementById('senderLive').classList.add('hidden');
   document.getElementById('viewerInput').classList.remove('hidden');
@@ -1056,12 +2055,18 @@ function stopAll() {
   document.getElementById('codeInput').value = '';
   document.getElementById('btnFlash').classList.remove('active');
   document.getElementById('btnRecord').classList.remove('recording');
+  document.getElementById('btnAudio').classList.remove('active');
+  document.getElementById('btnTimestamp').classList.remove('active');
   document.getElementById('senderRecBadge').classList.remove('visible');
   document.getElementById('viewerRecBadge').classList.remove('visible');
+  document.getElementById('localVideo').style.transform = '';
+
   showToast('종료되었습니다');
 }
 
-// ---- FULLSCREEN ----
+// ============================================================
+// FULLSCREEN (register on document ONCE)
+// ============================================================
 function toggleFullscreen(wrap) {
   if (document.fullscreenElement || document.webkitFullscreenElement) {
     (document.exitFullscreen || document.webkitExitFullscreen).call(document);
@@ -1070,7 +2075,24 @@ function toggleFullscreen(wrap) {
   }
 }
 
-// ---- PINCH-TO-ZOOM & TAP FULLSCREEN ----
+// Single fullscreen handler on document (Bug fix: not inside setupVideoTouch)
+function handleFullscreenChange() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    // Reset viewer video zoom on exit fullscreen
+    const remoteVideo = document.getElementById('remoteVideo');
+    if (remoteVideo) remoteVideo.style.transform = '';
+    // Reset any pinch zoom state on viewer
+    viewerPinchZoom = 1;
+  }
+}
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+// ============================================================
+// PINCH-TO-ZOOM & TAP FULLSCREEN
+// ============================================================
+let viewerPinchZoom = 1;
+
 function setupVideoTouch(wrap) {
   const video = wrap.querySelector('video');
   const indicator = wrap.querySelector('.zoom-indicator');
@@ -1114,7 +2136,7 @@ function setupVideoTouch(wrap) {
       video.style.transform = 'scale(' + pinchZoom + ')';
       showZoomLevel(pinchZoom);
 
-      // 송출폰이면 소프트웨어 줌 업데이트 → 미러링에 전달됨
+      // Sender side: update software zoom
       if (video.id === 'localVideo') {
         softwareZoom = pinchZoom;
         if (!hasHardwareZoom) {
@@ -1123,6 +2145,11 @@ function setupVideoTouch(wrap) {
           slider.value = clamped;
           document.getElementById('zoomVal').textContent = clamped.toFixed(1) + 'x';
         }
+        updatePipelineState();
+      }
+
+      if (video.id === 'remoteVideo') {
+        viewerPinchZoom = pinchZoom;
       }
     }
   }, { passive: false });
@@ -1139,30 +2166,14 @@ function setupVideoTouch(wrap) {
       }, 200);
     }
   });
-
-  // 전체화면 해제 시 뷰어 줌 리셋
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (video.id === 'remoteVideo') {
-        pinchZoom = 1;
-        video.style.transform = '';
-      }
-    }
-  });
-  document.addEventListener('webkitfullscreenchange', () => {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (video.id === 'remoteVideo') {
-        pinchZoom = 1;
-        video.style.transform = '';
-      }
-    }
-  });
 }
 
 setupVideoTouch(document.getElementById('senderVideoWrap'));
 setupVideoTouch(document.getElementById('viewerVideoWrap'));
 
-// ---- AUTO ORIENTATION ----
+// ============================================================
+// AUTO ORIENTATION
+// ============================================================
 function updateOrientation() {
   const isLandscape = window.innerWidth > window.innerHeight;
   document.querySelectorAll('.video-wrap').forEach(w => {
@@ -1173,38 +2184,63 @@ function updateOrientation() {
 window.addEventListener('resize', updateOrientation);
 window.addEventListener('orientationchange', () => setTimeout(updateOrientation, 100));
 
-// ---- SAVE RECORDING (user gesture → no Chrome prompt) ----
-function saveRecording() {
-  if (!pendingBlob) return;
-  const url = URL.createObjectURL(pendingBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = pendingFileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
-  pendingBlob = null;
-  pendingFileName = '';
-  document.getElementById('saveBar').classList.remove('visible');
-  showToast('Downloads 폴더에 저장됨');
+// ============================================================
+// URL CODE PASSING
+// ============================================================
+function handleUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const codeParam = params.get('code');
+  const modeParam = params.get('mode');
+
+  if (modeParam === 'viewer') {
+    setMode('viewer');
+  } else if (modeParam === 'sender') {
+    setMode('sender');
+  }
+
+  if (codeParam && codeParam.length === 4) {
+    setMode('viewer');
+    document.getElementById('codeInput').value = codeParam;
+    // Auto-connect after short delay
+    setTimeout(() => startViewer(), 500);
+  }
 }
 
-function dismissSave() {
-  if (pendingBlob) URL.revokeObjectURL(URL.createObjectURL(pendingBlob));
-  pendingBlob = null;
-  pendingFileName = '';
-  document.getElementById('saveBar').classList.remove('visible');
-  showToast('녹화 파일 삭제됨');
+// ============================================================
+// PWA
+// ============================================================
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+
+function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then((result) => {
+    if (result.outcome === 'accepted') {
+      showToast('앱 설치됨!');
+    }
+    deferredInstallPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+  });
 }
 
-// ---- TOAST ----
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+// Service worker registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {
+    // SW not available — that's ok for standalone HTML usage
+  });
 }
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  document.getElementById('shareUrlText').textContent = location.href;
+  handleUrlParams();
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,18 @@
+{
+  "name": "CamMirror - P2P 카메라 미러링",
+  "short_name": "CamMirror",
+  "description": "WebRTC P2P 실시간 카메라 미러링 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
