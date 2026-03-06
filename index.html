@@ -475,13 +475,20 @@ function copyUrl() {
 
 // ---- SENDER ----
 async function startSender() {
+  // 브라우저 지원 체크
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    showToast('이 브라우저는 화면 공유를 지원하지 않습니다 (Android Chrome 필요)');
+    return;
+  }
+
   try {
-    localStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false
-    });
+    localStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
   } catch(e) {
-    showToast('화면 공유를 허용해주세요');
+    if (e.name === 'NotAllowedError') {
+      showToast('화면 공유가 거부되었습니다. 다시 시도해주세요');
+    } else {
+      showToast('화면 공유 실패: ' + e.name + ' - ' + e.message);
+    }
     return;
   }
 
