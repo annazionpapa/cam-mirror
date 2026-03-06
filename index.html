@@ -304,6 +304,18 @@
     border-radius: 4px;
     letter-spacing: 1px;
   }
+  .rec-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(239,68,68,0.9);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    animation: blink 1s infinite;
+    display: none;
+  }
+  .rec-badge.visible { display: block; }
 
   /* ── Camera controls ── */
   .cam-controls {
@@ -527,6 +539,7 @@
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
+          <div class="rec-badge" id="senderRecBadge">● REC</div>
         </div>
         <div class="fs-hint">탭하여 전체화면</div>
         <div class="zoom-indicator" id="senderZoomIndicator"></div>
@@ -580,6 +593,7 @@
         <div class="video-overlay">
           <div class="live-dot"></div>
           <div class="live-label">LIVE</div>
+          <div class="rec-badge" id="viewerRecBadge">● REC</div>
         </div>
         <div class="fs-hint">탭하여 전체화면</div>
         <div class="zoom-indicator" id="viewerZoomIndicator"></div>
@@ -835,6 +849,8 @@ function toggleRecord() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
     document.getElementById('btnRecord').classList.remove('recording');
+    document.getElementById('senderRecBadge').classList.remove('visible');
+    document.getElementById('viewerRecBadge').classList.remove('visible');
     showToast('녹화 종료 · 저장 중...');
     return;
   }
@@ -878,6 +894,8 @@ function toggleRecord() {
 
   mediaRecorder.start(1000);
   document.getElementById('btnRecord').classList.add('recording');
+  document.getElementById('senderRecBadge').classList.add('visible');
+  document.getElementById('viewerRecBadge').classList.add('visible');
   showToast('녹화 시작');
 }
 
@@ -960,6 +978,8 @@ function stopAll() {
   document.getElementById('codeInput').value = '';
   document.getElementById('btnFlash').classList.remove('active');
   document.getElementById('btnRecord').classList.remove('recording');
+  document.getElementById('senderRecBadge').classList.remove('visible');
+  document.getElementById('viewerRecBadge').classList.remove('visible');
   showToast('종료되었습니다');
 }
 
