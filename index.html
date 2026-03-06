@@ -890,12 +890,29 @@ function toggleRecord() {
     if (e.data.size > 0) recordedChunks.push(e.data);
   };
 
-  mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+  mediaRecorder.onstop = async () => {
+    const mimeType = mediaRecorder.mimeType || 'video/webm';
+    const blob = new Blob(recordedChunks, { type: mimeType });
+    const filename = 'REC-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+
+    // 모바일: navigator.share로 바로 저장/공유
+    if (navigator.share && navigator.canShare) {
+      const file = new File([blob], filename, { type: mimeType });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          showToast('녹화 파일 저장됨');
+          return;
+        } catch (e) {
+          if (e.name === 'AbortError') { showToast('저장 취소됨'); return; }
+        }
+      }
+    }
+    // 폴백: 다운로드
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'REC-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
