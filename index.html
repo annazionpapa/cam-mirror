@@ -1250,6 +1250,7 @@
             <div class="status-dot connecting" id="viewerStatusDot"></div>
             <span id="viewerStatusText">연결 중...</span>
           </div>
+          <button class="btn btn-primary hidden" id="manualReconnectBtn" onclick="manualReconnect()" style="margin-top:8px;">&#x1F504; 재연결</button>
           <button class="btn btn-danger" onclick="stopAll()">종료</button>
         </div>
       </div>
@@ -2316,12 +2317,20 @@ function connectViewer(code) {
         updateOrientationIndicator(msg.orientation);
       }
       if (msg && msg.type === 'senderStopped') {
-        // Sender camera was turned off
-        showToast('촬영 폰에서 카메라가 종료되었습니다');
+        // Sender camera was turned off — reset and start reconnecting
+        showToast('촬영 폰에서 카메라가 종료되었습니다. 재연결 대기 중...');
         document.getElementById('viewerStatusText').textContent = '촬영 종료됨 · 재연결 대기 중';
         const dot = document.getElementById('viewerStatusDot');
         dot.classList.remove('on');
         dot.classList.add('connecting');
+        // Reset attempts so we get fresh retries when sender restarts
+        viewerReconnectAttempts = 0;
+        viewerReconnecting = false;
+        // Start reconnecting after 2s (give sender time to restart)
+        clearTimeout(viewerReconnectTimer);
+        viewerReconnectTimer = setTimeout(() => {
+          attemptViewerReconnect();
+        }, 2000);
       }
     });
     viewerDataConn.on('close', () => {
@@ -2371,30 +2380,47 @@ function connectViewer(code) {
   });
 }
 
+let viewerReconnecting = false; // guard against duplicate calls
+
 function attemptViewerReconnect() {
   if (!viewerCode) return;
+  if (viewerReconnecting) return; // already scheduling a reconnect
+
   if (viewerReconnectAttempts >= VIEWER_MAX_RETRIES) {
-    showToast('재연결 실패. 다시 시도해주세요');
+    showToast('재연결 실패. 재연결 버튼을 눌러주세요');
     document.getElementById('viewerStatusText').textContent = '재연결 실패';
     document.getElementById('viewerStatusDot').classList.remove('connecting', 'on');
+    document.getElementById('manualReconnectBtn').classList.remove('hidden');
     return;
   }
 
+  viewerReconnecting = true;
   viewerReconnectAttempts++;
-  const delay = Math.min(1000 * Math.pow(2, viewerReconnectAttempts - 1), 8000);
+  // Faster backoff: 500ms → 1s → 2s → 3s max
+  const delay = Math.min(500 * viewerReconnectAttempts, 3000);
 
   document.getElementById('viewerStatusText').textContent = '재연결 중... (' + viewerReconnectAttempts + '/' + VIEWER_MAX_RETRIES + ')';
   document.getElementById('viewerStatusDot').classList.remove('on');
   document.getElementById('viewerStatusDot').classList.add('connecting');
+  document.getElementById('manualReconnectBtn').classList.add('hidden');
 
   clearTimeout(viewerReconnectTimer);
   viewerReconnectTimer = setTimeout(() => {
+    viewerReconnecting = false;
     // Clean up old peer
     if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
     viewerCall = null;
     viewerDataConn = null;
     connectViewer(viewerCode);
   }, delay);
+}
+
+// Manual reconnect button handler
+function manualReconnect() {
+  viewerReconnectAttempts = 0;
+  viewerReconnecting = false;
+  document.getElementById('manualReconnectBtn').classList.add('hidden');
+  attemptViewerReconnect();
 }
 
 function sendRemoteControl(action) {
@@ -2450,6 +2476,7 @@ function stopAll() {
   clearTimeout(viewerReconnectTimer);
   viewerCode = '';
   viewerReconnectAttempts = 0;
+  viewerReconnecting = false;
 
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
 
