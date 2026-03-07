@@ -352,20 +352,22 @@
   .video-wrap .fit-toggle-btn {
     display: none;
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
     background: rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.25);
     color: #fff;
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 600;
     font-family: inherit;
-    padding: 8px 14px;
-    border-radius: 20px;
+    padding: 14px 28px;
+    border-radius: 12px;
     cursor: pointer;
     z-index: 12;
+    opacity: 0.9;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    white-space: nowrap;
   }
   .video-wrap:fullscreen .fit-toggle-btn,
   .video-wrap:-webkit-full-screen .fit-toggle-btn { display: block; }
@@ -391,11 +393,10 @@
   .video-wrap:fullscreen .fs-btn,
   .video-wrap:-webkit-full-screen .fs-btn {
     bottom: 24px;
-    left: 50%;
+    left: 24px;
     right: auto;
-    transform: translateX(-50%);
     font-size: 16px;
-    padding: 14px 32px;
+    padding: 14px 28px;
     border-radius: 12px;
     opacity: 0.9;
     border: 1px solid rgba(255,255,255,0.25);
@@ -1218,6 +1219,7 @@
             </div>
             <button class="fs-btn" onclick="toggleFullscreen(this.closest('.video-wrap'))">&#x26F6; 전체화면</button>
             <div class="zoom-indicator" id="senderZoomIndicator"></div>
+            <button class="fit-toggle-btn" id="senderFitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
           </div>
         </div>
 
@@ -2768,10 +2770,16 @@ setupVideoTouch(document.getElementById('viewerVideoWrap'));
 function toggleFitMode(e) {
   if (e) e.stopPropagation();
   fitCover = !fitCover;
-  const video = document.getElementById('remoteVideo');
-  video.classList.toggle('fit-cover', fitCover);
-  const btn = document.getElementById('fitToggleBtn');
-  btn.textContent = fitCover ? '\u26F6 원본 비율' : '\u26F6 화면 채우기';
+  const label = fitCover ? '\u26F6 원본 비율' : '\u26F6 화면 채우기';
+  // Apply to both sender and viewer videos
+  ['localVideo', 'remoteVideo'].forEach(id => {
+    const v = document.getElementById(id);
+    if (v) v.classList.toggle('fit-cover', fitCover);
+  });
+  ['fitToggleBtn', 'senderFitToggleBtn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.textContent = label;
+  });
 }
 
 // ============================================================
