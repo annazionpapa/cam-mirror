@@ -838,6 +838,196 @@
     margin-top: 8px;
   }
 
+  /* -- Live layout (portrait = stack, landscape = side by side) -- */
+  .live-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .live-video-area {
+    width: 100%;
+  }
+  .live-controls-area {
+    width: 100%;
+  }
+  /* Code row (compact inline) */
+  .live-code-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .live-code-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .live-code-value {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: var(--accent);
+    flex: 1;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(16,185,129,0.3);
+  }
+  .live-code-new, .live-code-qr {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .live-code-new:hover, .live-code-qr:hover { border-color: var(--muted); color: var(--text2); }
+
+  /* ====== LANDSCAPE MODE ====== */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .header {
+      padding: 6px 16px;
+    }
+    .header .logo { font-size: 16px; }
+    .header .logo-sub { display: none; }
+    .header .badge { display: none; }
+
+    .main {
+      max-width: 100%;
+      padding: 8px 12px;
+    }
+
+    .mode-selector {
+      margin-bottom: 8px;
+    }
+    .mode-btn { padding: 8px 6px; }
+    .mode-btn .icon { font-size: 16px; margin-bottom: 0; display: inline; }
+    .mode-btn .label { font-size: 13px; display: inline; }
+    .mode-btn .sub { display: none; }
+
+    /* Live layout: side-by-side */
+    .live-layout {
+      flex-direction: row;
+      gap: 10px;
+      align-items: flex-start;
+      min-height: 0;
+    }
+    .live-video-area {
+      flex: 1;
+      min-width: 0;
+      max-height: calc(100dvh - 60px);
+    }
+    .live-video-area .video-wrap {
+      aspect-ratio: 16/9;
+      max-height: calc(100dvh - 70px);
+    }
+    .live-controls-area {
+      width: 200px;
+      flex-shrink: 0;
+      max-height: calc(100dvh - 60px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Compact controls in landscape */
+    .live-code-row {
+      padding: 5px 8px;
+      margin-bottom: 6px;
+    }
+    .live-code-value {
+      font-size: 18px;
+      letter-spacing: 4px;
+    }
+
+    .cam-controls {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 0;
+    }
+    .cam-btn {
+      padding: 6px 3px;
+      font-size: 10px;
+      border-radius: 8px;
+    }
+    .cam-btn .cam-icon { font-size: 13px; margin-bottom: 1px; }
+
+    .remote-controls {
+      gap: 3px;
+      margin-top: 0;
+    }
+    .remote-btn {
+      padding: 5px 8px;
+      font-size: 10px;
+      border-radius: 8px;
+    }
+    .remote-btn .r-icon { font-size: 12px; }
+
+    .zoom-row {
+      margin-top: 6px;
+      padding: 5px 8px;
+    }
+    .zoom-label { font-size: 10px; min-width: 20px; }
+    .zoom-val { font-size: 11px; min-width: 28px; }
+
+    .status-row {
+      margin-top: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    .btn-danger {
+      padding: 8px;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .card {
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* Hide non-essential in landscape */
+    #howTo { display: none; }
+
+    /* QR compact */
+    .qr-container { margin-bottom: 6px; }
+    .qr-box { max-width: 120px; padding: 6px; }
+  }
+
+  /* Wider landscape (tablets / larger phones) */
+  @media (orientation: landscape) and (min-height: 501px) {
+    .live-layout {
+      flex-direction: row;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .live-video-area {
+      flex: 1;
+      min-width: 0;
+    }
+    .live-video-area .video-wrap {
+      aspect-ratio: 16/9;
+    }
+    .live-controls-area {
+      width: 260px;
+      flex-shrink: 0;
+      max-height: calc(100dvh - 100px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .main {
+      max-width: 100%;
+    }
+  }
+
   /* -- CCTV (screen off) mode -- */
   .cctv-overlay {
     position: fixed;
@@ -944,65 +1134,70 @@
     </div>
 
     <div class="card hidden" id="senderLive">
-      <div class="card-title">연결 코드</div>
-      <div class="room-code" id="senderCode">----</div>
-      <div class="hint">모니터 폰에서 이 4자리 숫자를 입력하세요
-        <button style="margin-left:8px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-size:11px; padding:3px 8px; border-radius:6px; cursor:pointer; font-family:inherit;" onclick="regenerateCode()">새 코드</button>
-      </div>
-
-      <!-- QR Code -->
-      <div class="qr-container" id="qrContainer">
-        <button class="qr-toggle-btn" onclick="toggleQR()">QR 표시</button>
-        <div class="qr-box" id="qrBox"></div>
-      </div>
-
-      <div class="video-wrap" id="senderVideoWrap">
-        <video id="localVideo" autoplay muted playsinline></video>
-        <div class="video-overlay">
-          <div class="live-dot"></div>
-          <div class="live-label">LIVE</div>
-          <div class="rec-badge" id="senderRecBadge">&#x25CF; REC</div>
+      <div class="live-layout">
+        <!-- Left: video area -->
+        <div class="live-video-area">
+          <div class="video-wrap" id="senderVideoWrap">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-overlay">
+              <div class="live-dot"></div>
+              <div class="live-label">LIVE</div>
+              <div class="rec-badge" id="senderRecBadge">&#x25CF; REC</div>
+            </div>
+            <div class="fs-hint">탭하여 전체화면</div>
+            <div class="zoom-indicator" id="senderZoomIndicator"></div>
+          </div>
         </div>
-        <div class="fs-hint">탭하여 전체화면</div>
-        <div class="zoom-indicator" id="senderZoomIndicator"></div>
-      </div>
 
-      <!-- Camera controls (3x2) -->
-      <div class="cam-controls">
-        <button class="cam-btn" id="btnFlip" onclick="flipCamera()">
-          <span class="cam-icon">&#x1F504;</span>전환
-        </button>
-        <button class="cam-btn" id="btnFlash" onclick="toggleFlash()">
-          <span class="cam-icon">&#x1F526;</span>플래시
-        </button>
-        <button class="cam-btn" id="btnRecord" onclick="toggleRecord()">
-          <span class="cam-icon">&#x23FA;</span>녹화
-        </button>
-        <button class="cam-btn" id="btnSnapshot" onclick="takeSnapshot()">
-          <span class="cam-icon">&#x1F4F8;</span>캡처
-        </button>
-        <button class="cam-btn" id="btnAudio" onclick="toggleAudio()">
-          <span class="cam-icon">&#x1F50A;</span>오디오
-        </button>
-        <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()">
-          <span class="cam-icon">&#x1F550;</span>시간
-        </button>
-        <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()">
-          <span class="cam-icon">&#x1F4F9;</span>CCTV
-        </button>
-      </div>
+        <!-- Right: controls area -->
+        <div class="live-controls-area">
+          <div class="live-code-row">
+            <span class="live-code-label">코드</span>
+            <span class="live-code-value" id="senderCode">----</span>
+            <button class="live-code-new" onclick="regenerateCode()">새 코드</button>
+            <button class="live-code-qr" onclick="toggleQR()">QR</button>
+          </div>
+          <div class="qr-container" id="qrContainer" style="display:none;">
+            <div class="qr-box" id="qrBox"></div>
+          </div>
 
-      <div class="zoom-row" id="zoomRow">
-        <span class="zoom-label">줌</span>
-        <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
-        <span class="zoom-val" id="zoomVal">1.0x</span>
-      </div>
+          <div class="cam-controls">
+            <button class="cam-btn" id="btnFlip" onclick="flipCamera()">
+              <span class="cam-icon">&#x1F504;</span>전환
+            </button>
+            <button class="cam-btn" id="btnFlash" onclick="toggleFlash()">
+              <span class="cam-icon">&#x1F526;</span>플래시
+            </button>
+            <button class="cam-btn" id="btnRecord" onclick="toggleRecord()">
+              <span class="cam-icon">&#x23FA;</span>녹화
+            </button>
+            <button class="cam-btn" id="btnSnapshot" onclick="takeSnapshot()">
+              <span class="cam-icon">&#x1F4F8;</span>캡처
+            </button>
+            <button class="cam-btn" id="btnAudio" onclick="toggleAudio()">
+              <span class="cam-icon">&#x1F50A;</span>오디오
+            </button>
+            <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()">
+              <span class="cam-icon">&#x1F550;</span>시간
+            </button>
+            <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()">
+              <span class="cam-icon">&#x1F4F9;</span>CCTV
+            </button>
+          </div>
 
-      <div class="status-row">
-        <div class="status-dot" id="senderStatusDot"></div>
-        <span id="senderStatusText">모니터 연결 대기 중...</span>
+          <div class="zoom-row" id="zoomRow">
+            <span class="zoom-label">줌</span>
+            <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
+            <span class="zoom-val" id="zoomVal">1.0x</span>
+          </div>
+
+          <div class="status-row">
+            <div class="status-dot" id="senderStatusDot"></div>
+            <span id="senderStatusText">모니터 연결 대기 중...</span>
+          </div>
+          <button class="btn btn-danger" onclick="stopAll()">종료</button>
+        </div>
       </div>
-      <button class="btn btn-danger" onclick="stopAll()">종료</button>
     </div>
   </div>
 
@@ -1021,37 +1216,43 @@
     </div>
 
     <div class="card hidden" id="viewerLive">
-      <div class="card-title">실시간 화면</div>
-      <div class="video-wrap" id="viewerVideoWrap">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <div class="video-overlay">
-          <div class="live-dot"></div>
-          <div class="live-label">LIVE</div>
-          <div class="rec-badge" id="viewerRecBadge">&#x25CF; REC</div>
+      <div class="live-layout">
+        <!-- Left: video area -->
+        <div class="live-video-area">
+          <div class="video-wrap" id="viewerVideoWrap">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-overlay">
+              <div class="live-dot"></div>
+              <div class="live-label">LIVE</div>
+              <div class="rec-badge" id="viewerRecBadge">&#x25CF; REC</div>
+            </div>
+            <div class="fs-hint">탭하여 전체화면</div>
+            <div class="zoom-indicator" id="viewerZoomIndicator"></div>
+            <button class="fit-toggle-btn" id="fitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
+            <div class="orientation-indicator" id="orientationIndicator"></div>
+          </div>
         </div>
-        <div class="fs-hint">탭하여 전체화면</div>
-        <div class="zoom-indicator" id="viewerZoomIndicator"></div>
-        <button class="fit-toggle-btn" id="fitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
-        <div class="orientation-indicator" id="orientationIndicator"></div>
-      </div>
 
-      <!-- Remote controls -->
-      <div class="remote-controls" id="remoteControls">
-        <button class="remote-btn" onclick="sendRemoteControl('flip')"><span class="r-icon">&#x1F504;</span>전환</button>
-        <button class="remote-btn" onclick="sendRemoteControl('flash')"><span class="r-icon">&#x1F526;</span>플래시</button>
-        <button class="remote-btn" onclick="sendRemoteControl('zoomIn')"><span class="r-icon">&#x1F50D;</span>줌+</button>
-        <button class="remote-btn" onclick="sendRemoteControl('zoomOut')"><span class="r-icon">&#x1F50E;</span>줌-</button>
-        <button class="remote-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="r-icon">&#x23FA;</span>녹화</button>
-        <button class="remote-btn" onclick="sendRemoteControl('snapshot')"><span class="r-icon">&#x1F4F8;</span>캡처</button>
-        <button class="remote-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="r-icon">&#x1F50A;</span>오디오</button>
-        <button class="remote-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="r-icon">&#x1F4F9;</span>CCTV</button>
-      </div>
+        <!-- Right: controls area -->
+        <div class="live-controls-area">
+          <div class="remote-controls" id="remoteControls">
+            <button class="remote-btn" onclick="sendRemoteControl('flip')"><span class="r-icon">&#x1F504;</span>전환</button>
+            <button class="remote-btn" onclick="sendRemoteControl('flash')"><span class="r-icon">&#x1F526;</span>플래시</button>
+            <button class="remote-btn" onclick="sendRemoteControl('zoomIn')"><span class="r-icon">&#x1F50D;</span>줌+</button>
+            <button class="remote-btn" onclick="sendRemoteControl('zoomOut')"><span class="r-icon">&#x1F50E;</span>줌-</button>
+            <button class="remote-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="r-icon">&#x23FA;</span>녹화</button>
+            <button class="remote-btn" onclick="sendRemoteControl('snapshot')"><span class="r-icon">&#x1F4F8;</span>캡처</button>
+            <button class="remote-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="r-icon">&#x1F50A;</span>오디오</button>
+            <button class="remote-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="r-icon">&#x1F4F9;</span>CCTV</button>
+          </div>
 
-      <div class="status-row">
-        <div class="status-dot connecting" id="viewerStatusDot"></div>
-        <span id="viewerStatusText">연결 중...</span>
+          <div class="status-row">
+            <div class="status-dot connecting" id="viewerStatusDot"></div>
+            <span id="viewerStatusText">연결 중...</span>
+          </div>
+          <button class="btn btn-danger" onclick="stopAll()">종료</button>
+        </div>
       </div>
-      <button class="btn btn-danger" onclick="stopAll()">종료</button>
     </div>
   </div>
 
@@ -1309,14 +1510,14 @@ function generateQR(code) {
 
 function toggleQR() {
   qrVisible = !qrVisible;
-  const btn = document.querySelector('.qr-toggle-btn');
+  const container = document.getElementById('qrContainer');
   const box = document.getElementById('qrBox');
   if (qrVisible) {
+    container.style.display = 'flex';
     box.classList.add('visible');
-    btn.textContent = 'QR 숨기기';
   } else {
+    container.style.display = 'none';
     box.classList.remove('visible');
-    btn.textContent = 'QR 표시';
   }
 }
 
@@ -2443,6 +2644,18 @@ function updateOrientation() {
     if (document.fullscreenElement === w || document.webkitFullscreenElement === w) return;
     w.classList.toggle('landscape', isLandscape);
   });
+
+  // Hide mode selector in landscape when live
+  const senderLive = document.getElementById('senderLive');
+  const viewerLive = document.getElementById('viewerLive');
+  const isLive = (senderLive && !senderLive.classList.contains('hidden')) ||
+                 (viewerLive && !viewerLive.classList.contains('hidden'));
+  const modeSelector = document.getElementById('modeSelector');
+  if (isLandscape && isLive) {
+    modeSelector.style.display = 'none';
+  } else {
+    modeSelector.style.display = '';
+  }
 
   // Sender: broadcast orientation change to viewers
   if (currentMode === 'sender' && viewers.length > 0) {
