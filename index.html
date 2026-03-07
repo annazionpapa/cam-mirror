@@ -89,6 +89,29 @@
   }
   .header-btn:hover { border-color: var(--muted); }
   .header-btn.install-btn { display: none; font-size: 13px; font-weight: 700; width: auto; padding: 0 12px; font-family: inherit; color: var(--accent); border-color: rgba(16,185,129,0.3); background: var(--accent-glow); }
+
+  /* -- Install footer -- */
+  .install-footer {
+    display: none;
+    text-align: center;
+    padding: 16px 0 8px;
+  }
+  .install-footer.visible { display: block; }
+  .install-footer-btn {
+    background: transparent;
+    border: 1px dashed rgba(16,185,129,0.4);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .install-footer-btn:hover { background: var(--accent-glow); border-style: solid; }
+  .install-footer-btn:active { transform: scale(0.98); }
   .badge {
     font-size: 11px;
     font-weight: 600;
@@ -1301,6 +1324,11 @@
       <li><div class="step-num">4</div><span>4자리 코드를 입력하고 <b>연결하기</b>를 누르세요</span></li>
       <li><div class="step-num">&#x2713;</div><span>전환, 줌, 플래시, 녹화, 캡처, 오디오 등을 사용할 수 있습니다</span></li>
     </ul>
+  </div>
+
+  <!-- Install footer -->
+  <div class="install-footer" id="installFooter">
+    <button class="install-footer-btn" onclick="installPWA()">📲 앱으로 설치하기</button>
   </div>
 
 </div>
@@ -2819,6 +2847,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
   document.getElementById('installBtn').style.display = 'flex';
+  document.getElementById('installFooter').classList.add('visible');
 });
 
 function installPWA() {
@@ -2830,7 +2859,13 @@ function installPWA() {
     }
     deferredInstallPrompt = null;
     document.getElementById('installBtn').style.display = 'none';
+    document.getElementById('installFooter').classList.remove('visible');
   });
+}
+
+// Hide install footer if already installed (standalone mode)
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  document.getElementById('installFooter').classList.remove('visible');
 }
 
 // Service worker registration
