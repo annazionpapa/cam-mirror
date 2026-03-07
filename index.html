@@ -362,8 +362,12 @@
   }
   .video-wrap:fullscreen .orientation-indicator,
   .video-wrap:-webkit-full-screen .orientation-indicator { display: block; }
-  .video-wrap:fullscreen .fs-hint,
-  .video-wrap:-webkit-full-screen .fs-hint { display: none; }
+  .video-wrap:fullscreen .fs-btn,
+  .video-wrap:-webkit-full-screen .fs-btn {
+    bottom: 20px; right: 20px;
+    font-size: 13px;
+    padding: 8px 16px;
+  }
   .video-wrap:fullscreen .zoom-indicator,
   .video-wrap:-webkit-full-screen .zoom-indicator {
     position: absolute;
@@ -394,18 +398,25 @@
     transform-origin: center center;
     transition: transform 0.1s;
   }
-  .fs-hint {
+  .fs-btn {
     position: absolute;
     bottom: 10px; right: 10px;
     background: rgba(0,0,0,0.6);
     color: #fff;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 6px;
-    pointer-events: none;
-    opacity: 0.7;
+    font-family: inherit;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    opacity: 0.85;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.2s;
   }
+  .fs-btn:active { opacity: 1; transform: scale(0.95); }
   .video-overlay {
     position: absolute;
     top: 10px; left: 10px;
@@ -1144,7 +1155,7 @@
               <div class="live-label">LIVE</div>
               <div class="rec-badge" id="senderRecBadge">&#x25CF; REC</div>
             </div>
-            <div class="fs-hint">탭하여 전체화면</div>
+            <button class="fs-btn" onclick="toggleFullscreen(this.closest('.video-wrap'))">&#x26F6; 전체화면</button>
             <div class="zoom-indicator" id="senderZoomIndicator"></div>
           </div>
         </div>
@@ -1226,7 +1237,7 @@
               <div class="live-label">LIVE</div>
               <div class="rec-badge" id="viewerRecBadge">&#x25CF; REC</div>
             </div>
-            <div class="fs-hint">탭하여 전체화면</div>
+            <button class="fs-btn" onclick="toggleFullscreen(this.closest('.video-wrap'))">&#x26F6; 전체화면</button>
             <div class="zoom-indicator" id="viewerZoomIndicator"></div>
             <button class="fit-toggle-btn" id="fitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
             <div class="orientation-indicator" id="orientationIndicator"></div>
@@ -2528,6 +2539,11 @@ function toggleFullscreen(wrap) {
 // Single fullscreen handler on document (Bug fix: not inside setupVideoTouch)
 function handleFullscreenChange() {
   const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  // Update all fullscreen button labels
+  document.querySelectorAll('.fs-btn').forEach(btn => {
+    btn.textContent = fsEl ? '\u26F6 전체화면 해제' : '\u26F6 전체화면';
+  });
+
   if (!fsEl) {
     // Exiting fullscreen — reset viewer video zoom
     const remoteVideo = document.getElementById('remoteVideo');
@@ -2622,12 +2638,7 @@ function setupVideoTouch(wrap) {
       isPinching = false;
       return;
     }
-    if (e.changedTouches.length === 1 && e.touches.length === 0) {
-      clearTimeout(tapTimeout);
-      tapTimeout = setTimeout(() => {
-        toggleFullscreen(wrap);
-      }, 200);
-    }
+    // Tap-to-fullscreen removed — use the fullscreen button instead
   });
 }
 
