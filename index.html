@@ -445,7 +445,7 @@
   /* -- Camera controls (3x2 grid) -- */
   .cam-controls {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -838,6 +838,62 @@
     margin-top: 8px;
   }
 
+  /* -- CCTV (screen off) mode -- */
+  .cctv-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .cctv-overlay.visible { display: flex; }
+  .cctv-overlay .cctv-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.15;
+  }
+  .cctv-overlay .cctv-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.12);
+    font-weight: 500;
+    font-family: inherit;
+  }
+  .cctv-overlay .cctv-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.06);
+    margin-top: 8px;
+    font-family: inherit;
+  }
+  .cctv-overlay .cctv-status {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cctv-overlay .cctv-rec-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: pulse 1.5s infinite;
+    opacity: 0.3;
+  }
+  .cctv-overlay .cctv-rec-text {
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 1px;
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -931,6 +987,9 @@
         <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()">
           <span class="cam-icon">&#x1F550;</span>시간
         </button>
+        <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()">
+          <span class="cam-icon">&#x1F4F9;</span>CCTV
+        </button>
       </div>
 
       <div class="zoom-row" id="zoomRow">
@@ -985,6 +1044,7 @@
         <button class="remote-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="r-icon">&#x23FA;</span>녹화</button>
         <button class="remote-btn" onclick="sendRemoteControl('snapshot')"><span class="r-icon">&#x1F4F8;</span>캡처</button>
         <button class="remote-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="r-icon">&#x1F50A;</span>오디오</button>
+        <button class="remote-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="r-icon">&#x1F4F9;</span>CCTV</button>
       </div>
 
       <div class="status-row">
@@ -1044,6 +1104,17 @@
     <input type="text" id="turnCred" placeholder="credential">
   </div>
   <button class="settings-save-btn" onclick="saveSettings()">저장</button>
+</div>
+
+<!-- CCTV Screen-off overlay -->
+<div class="cctv-overlay" id="cctvOverlay" onclick="exitCctvMode()">
+  <div class="cctv-status">
+    <div class="cctv-rec-dot"></div>
+    <div class="cctv-rec-text">STREAMING</div>
+  </div>
+  <div class="cctv-icon">&#x1F4F9;</div>
+  <div class="cctv-text">CCTV 모드 · 카메라 송출 중</div>
+  <div class="cctv-hint">탭하여 화면 켜기</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1120,6 +1191,9 @@ let fitCover = false;
 
 // Sender orientation tracking
 let senderOrientation = 'portrait';
+
+// CCTV mode (screen-off)
+let cctvMode = false;
 
 // PWA
 let deferredInstallPrompt = null;
@@ -1357,30 +1431,44 @@ function stopRenderLoop() {
   canvasSizeSet = false;
 }
 
-// Get the stream to send over WebRTC
+// Silent audio track (always present so replaceTrack works when audio is toggled on)
+let silentAudioTrack = null;
+function getSilentAudioTrack() {
+  if (silentAudioTrack) return silentAudioTrack;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.value = 0; // silent
+  oscillator.connect(gain);
+  const dest = ctx.createMediaStreamDestination();
+  gain.connect(dest);
+  oscillator.start();
+  silentAudioTrack = dest.stream.getAudioTracks()[0];
+  return silentAudioTrack;
+}
+
+// Get the stream to send over WebRTC (always includes audio track)
 function getOutgoingStream() {
+  const combined = new MediaStream();
+
+  // Video track
   if (shouldUseCanvas()) {
     useCanvasPipeline = true;
-    // Ensure canvas pipeline is running
     if (!canvasStream) startRenderLoop();
-    // Combine canvas video + audio if available
-    if (audioOn && audioStream) {
-      const combined = new MediaStream();
-      canvasStream.getVideoTracks().forEach(t => combined.addTrack(t));
-      audioStream.getAudioTracks().forEach(t => combined.addTrack(t));
-      return combined;
-    }
-    return canvasStream;
+    canvasStream.getVideoTracks().forEach(t => combined.addTrack(t));
   } else {
     useCanvasPipeline = false;
-    if (audioOn && audioStream && localStream) {
-      const combined = new MediaStream();
-      localStream.getVideoTracks().forEach(t => combined.addTrack(t));
-      audioStream.getAudioTracks().forEach(t => combined.addTrack(t));
-      return combined;
-    }
-    return localStream;
+    if (localStream) localStream.getVideoTracks().forEach(t => combined.addTrack(t));
   }
+
+  // Audio track: real mic or silent placeholder
+  if (audioOn && audioStream) {
+    audioStream.getAudioTracks().forEach(t => combined.addTrack(t));
+  } else {
+    combined.addTrack(getSilentAudioTrack());
+  }
+
+  return combined;
 }
 
 // Switch track on all viewers when pipeline changes
@@ -1393,6 +1481,8 @@ function updateAllViewerTracks() {
   viewers.forEach(v => {
     if (v.call && v.call.peerConnection) {
       const senders = v.call.peerConnection.getSenders();
+      const hasAudioSender = senders.some(s => s.track && s.track.kind === 'audio');
+
       senders.forEach(sender => {
         if (sender.track && sender.track.kind === 'video' && videoTrack) {
           sender.replaceTrack(videoTrack).catch(() => {});
@@ -1401,8 +1491,11 @@ function updateAllViewerTracks() {
           sender.replaceTrack(audioTrack).catch(() => {});
         }
       });
-      // If no audio sender exists but we have audio now, we can't add track easily
-      // PeerJS doesn't expose addTrack — just log
+
+      // If no audio sender exists, add one via addTrack
+      if (!hasAudioSender && audioTrack) {
+        try { v.call.peerConnection.addTrack(audioTrack, outgoing); } catch(e) {}
+      }
     }
   });
 }
@@ -1571,6 +1664,25 @@ function approvePendingCall() {
   broadcastToViewers({ type: 'orientation', orientation: senderOrientation });
 }
 
+// ============================================================
+// CCTV MODE (screen-off while streaming)
+// ============================================================
+function enterCctvMode() {
+  if (!localStream) { showToast('카메라를 먼저 켜주세요'); return; }
+  cctvMode = true;
+  document.getElementById('cctvOverlay').classList.add('visible');
+  document.getElementById('btnCctv').classList.add('active');
+  // Keep wake lock active
+  requestWakeLock();
+  showToast('CCTV 모드 · 화면을 탭하면 복귀');
+}
+
+function exitCctvMode() {
+  cctvMode = false;
+  document.getElementById('cctvOverlay').classList.remove('visible');
+  document.getElementById('btnCctv').classList.remove('active');
+}
+
 function regenerateCode() {
   if (viewers.filter(v => v.call).length > 0) {
     if (!confirm('현재 연결된 모니터가 있습니다. 코드를 변경하면 연결이 끊어집니다. 계속하시겠습니까?')) return;
@@ -1648,6 +1760,10 @@ function handleRemoteControl(msg, dc) {
     case 'record': toggleRecord(); break;
     case 'snapshot': takeSnapshot(); break;
     case 'audio': toggleAudio(); break;
+    case 'cctv':
+      if (cctvMode) { exitCctvMode(); }
+      else { enterCctvMode(); }
+      break;
   }
 }
 
@@ -2138,6 +2254,8 @@ function stopAll() {
 
   flashOn = false;
   fitCover = false;
+  cctvMode = false;
+  document.getElementById('cctvOverlay').classList.remove('visible');
   pendingIncomingCall = null;
   clearInterval(approvalTimeout);
   document.getElementById('approvalModal').classList.remove('visible');
@@ -2194,8 +2312,12 @@ function handleFullscreenChange() {
     // Unlock orientation on exit
     try { screen.orientation.unlock(); } catch(e) {}
   } else {
-    // Entering fullscreen — lock orientation to 'any' so it stays fullscreen
-    try { screen.orientation.lock('any').catch(() => {}); } catch(e) {}
+    // Entering fullscreen — lock to current orientation to prevent unwanted rotation
+    try {
+      const type = screen.orientation.type || '';
+      const lockTo = type.includes('landscape') ? 'landscape' : 'portrait';
+      screen.orientation.lock(lockTo).catch(() => {});
+    } catch(e) {}
   }
 }
 document.addEventListener('fullscreenchange', handleFullscreenChange);
