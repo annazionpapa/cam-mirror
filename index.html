@@ -489,7 +489,7 @@
   /* -- Camera controls (3x2 grid) -- */
   .cam-controls {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -515,7 +515,7 @@
   /* remote-controls: same grid as cam-controls, reuses .cam-btn */
   .remote-controls {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -1007,16 +1007,16 @@
     }
 
     .cam-controls, .remote-controls {
-      grid-template-columns: repeat(5, 1fr);
-      gap: 3px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       margin-top: 0;
     }
     .cam-btn {
-      padding: 8px 2px;
+      padding: 8px 4px;
       font-size: 10px;
       border-radius: 8px;
     }
-    .cam-btn .cam-icon { font-size: 14px; margin-bottom: 1px; }
+    .cam-btn .cam-icon { font-size: 15px; margin-bottom: 1px; }
 
     .status-row {
       margin-top: 4px;
@@ -1190,6 +1190,7 @@
             <button class="fs-btn" onclick="toggleFullscreen(this.closest('.video-wrap'))">&#x26F6; 전체화면</button>
             <div class="zoom-indicator" id="senderZoomIndicator"></div>
             <button class="fit-toggle-btn" id="senderFitToggleBtn" onclick="toggleFitMode(event)">&#x26F6; 화면 채우기</button>
+            <div class="orientation-indicator" id="senderOrientationIndicator"></div>
           </div>
         </div>
 
