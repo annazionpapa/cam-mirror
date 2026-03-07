@@ -511,6 +511,8 @@
   .cam-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .cam-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); }
   .cam-btn .cam-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+  .cam-btn-stop { grid-column: span 2; border-color: var(--danger); color: var(--danger); }
+  .cam-btn-stop:hover { background: rgba(239,68,68,0.15); }
 
   /* remote-controls: same grid as cam-controls, reuses .cam-btn */
   .remote-controls {
@@ -1208,6 +1210,7 @@
             <button class="cam-btn" onclick="senderZoomIn()"><span class="cam-icon">&#x1F50D;</span>줌+</button>
             <button class="cam-btn" onclick="senderZoomOut()"><span class="cam-icon">&#x1F50E;</span>줌-</button>
             <button class="cam-btn" id="btnSenderLocalRec" onclick="toggleRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
+            <button class="cam-btn cam-btn-stop" onclick="stopAll()"><span class="cam-icon">&#x23F9;</span>종료</button>
           </div>
           <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" style="display:none;" oninput="applyZoom(this.value)">
           <span id="zoomVal" style="display:none;">1.0x</span>
@@ -1217,7 +1220,6 @@
             <span id="senderStatusText">모니터 연결 대기 중...</span>
           </div>
           <button class="btn btn-primary hidden" id="senderReconnectBtn" onclick="senderManualReconnect()" style="margin-top:8px;">&#x1F504; 재연결</button>
-          <button class="btn btn-danger" onclick="stopAll()">종료</button>
         </div>
       </div>
     </div>
@@ -1268,15 +1270,14 @@
             <button class="cam-btn" onclick="sendRemoteControl('zoomIn')"><span class="cam-icon">&#x1F50D;</span>줌+</button>
             <button class="cam-btn" onclick="sendRemoteControl('zoomOut')"><span class="cam-icon">&#x1F50E;</span>줌-</button>
             <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
+            <button class="cam-btn cam-btn-stop" onclick="stopAll()"><span class="cam-icon">&#x23F9;</span>종료</button>
           </div>
-
 
           <div class="status-row">
             <div class="status-dot connecting" id="viewerStatusDot"></div>
             <span id="viewerStatusText">연결 중...</span>
           </div>
           <button class="btn btn-primary hidden" id="manualReconnectBtn" onclick="manualReconnect()" style="margin-top:8px;">&#x1F504; 재연결</button>
-          <button class="btn btn-danger" onclick="stopAll()">종료</button>
         </div>
       </div>
     </div>
