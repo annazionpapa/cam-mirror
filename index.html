@@ -390,9 +390,15 @@
   .video-wrap:-webkit-full-screen .orientation-indicator { display: block; }
   .video-wrap:fullscreen .fs-btn,
   .video-wrap:-webkit-full-screen .fs-btn {
-    bottom: 20px; right: 20px;
-    font-size: 13px;
-    padding: 8px 16px;
+    bottom: 24px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    font-size: 16px;
+    padding: 14px 32px;
+    border-radius: 12px;
+    opacity: 0.9;
+    border: 1px solid rgba(255,255,255,0.25);
   }
   .video-wrap:fullscreen .zoom-indicator,
   .video-wrap:-webkit-full-screen .zoom-indicator {
@@ -429,20 +435,20 @@
     bottom: 10px; right: 10px;
     background: rgba(0,0,0,0.6);
     color: #fff;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     font-family: inherit;
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.15);
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
     cursor: pointer;
-    opacity: 0.85;
+    opacity: 0.9;
     z-index: 5;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     transition: opacity 0.2s;
   }
-  .fs-btn:active { opacity: 1; transform: scale(0.95); }
+  .fs-btn:active { opacity: 1; }
   .video-overlay {
     position: absolute;
     top: 10px; left: 10px;
