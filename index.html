@@ -489,17 +489,17 @@
   /* -- Camera controls (3x2 grid) -- */
   .cam-controls {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
   .cam-btn {
-    padding: 10px 6px;
+    padding: 12px 6px;
     border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--surface2);
     color: var(--text2);
-    font-size: 12px;
+    font-size: 13px;
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -510,12 +510,12 @@
   .cam-btn:active { transform: scale(0.97); }
   .cam-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .cam-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); }
-  .cam-btn .cam-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+  .cam-btn .cam-icon { font-size: 20px; display: block; margin-bottom: 3px; }
 
   /* remote-controls: same grid as cam-controls, reuses .cam-btn */
   .remote-controls {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -1007,16 +1007,16 @@
     }
 
     .cam-controls, .remote-controls {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 4px;
       margin-top: 0;
     }
     .cam-btn {
-      padding: 8px 4px;
-      font-size: 10px;
+      padding: 10px 4px;
+      font-size: 11px;
       border-radius: 8px;
     }
-    .cam-btn .cam-icon { font-size: 15px; margin-bottom: 1px; }
+    .cam-btn .cam-icon { font-size: 17px; margin-bottom: 1px; }
 
     .status-row {
       margin-top: 4px;
