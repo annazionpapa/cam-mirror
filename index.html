@@ -489,7 +489,7 @@
   /* -- Camera controls (3x2 grid) -- */
   .cam-controls {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -515,7 +515,7 @@
   /* remote-controls: same grid as cam-controls, reuses .cam-btn */
   .remote-controls {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     margin-top: 10px;
   }
@@ -1006,30 +1006,17 @@
       letter-spacing: 5px;
     }
 
-    .cam-controls {
-      grid-template-columns: repeat(4, 1fr);
+    .cam-controls, .remote-controls {
+      grid-template-columns: repeat(5, 1fr);
       gap: 3px;
       margin-top: 0;
     }
     .cam-btn {
-      padding: 10px 4px;
-      font-size: 11px;
+      padding: 8px 2px;
+      font-size: 10px;
       border-radius: 8px;
     }
-    .cam-btn .cam-icon { font-size: 15px; margin-bottom: 2px; }
-
-    .remote-controls {
-      grid-template-columns: repeat(4, 1fr);
-      gap: 3px;
-      margin-top: 0;
-    }
-
-    .zoom-row {
-      margin-top: 4px;
-      padding: 5px 8px;
-    }
-    .zoom-label { font-size: 10px; min-width: 20px; }
-    .zoom-val { font-size: 11px; min-width: 28px; }
+    .cam-btn .cam-icon { font-size: 14px; margin-bottom: 1px; }
 
     .status-row {
       margin-top: 4px;
@@ -1210,34 +1197,18 @@
         <div class="live-controls-area">
 
           <div class="cam-controls">
-            <button class="cam-btn" id="btnFlip" onclick="flipCamera()">
-              <span class="cam-icon">&#x1F504;</span>전환
-            </button>
-            <button class="cam-btn" id="btnFlash" onclick="toggleFlash()">
-              <span class="cam-icon">&#x1F526;</span>플래시
-            </button>
-            <button class="cam-btn" id="btnRecord" onclick="toggleRecord()">
-              <span class="cam-icon">&#x23FA;</span>녹화
-            </button>
-            <button class="cam-btn" id="btnSnapshot" onclick="takeSnapshot()">
-              <span class="cam-icon">&#x1F4F8;</span>캡처
-            </button>
-            <button class="cam-btn" id="btnAudio" onclick="toggleAudio()">
-              <span class="cam-icon">&#x1F50A;</span>오디오
-            </button>
-            <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()">
-              <span class="cam-icon">&#x1F550;</span>시간
-            </button>
-            <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()">
-              <span class="cam-icon">&#x1F4F9;</span>CCTV
-            </button>
+            <button class="cam-btn" id="btnFlip" onclick="flipCamera()"><span class="cam-icon">&#x1F504;</span>전환</button>
+            <button class="cam-btn" id="btnFlash" onclick="toggleFlash()"><span class="cam-icon">&#x1F526;</span>플래시</button>
+            <button class="cam-btn" id="btnRecord" onclick="toggleRecord()"><span class="cam-icon">&#x23FA;</span>녹화</button>
+            <button class="cam-btn" id="btnSnapshot" onclick="takeSnapshot()"><span class="cam-icon">&#x1F4F8;</span>캡처</button>
+            <button class="cam-btn" id="btnAudio" onclick="toggleAudio()"><span class="cam-icon">&#x1F50A;</span>오디오</button>
+            <button class="cam-btn" id="btnTimestamp" onclick="toggleTimestamp()"><span class="cam-icon">&#x1F550;</span>시간</button>
+            <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()"><span class="cam-icon">&#x1F4F9;</span>CCTV</button>
+            <button class="cam-btn" onclick="senderZoomIn()"><span class="cam-icon">&#x1F50D;</span>줌+</button>
+            <button class="cam-btn" onclick="senderZoomOut()"><span class="cam-icon">&#x1F50E;</span>줌-</button>
+            <button class="cam-btn" id="btnSenderLocalRec" onclick="toggleRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
           </div>
-
-          <div class="zoom-row" id="zoomRow">
-            <span class="zoom-label">줌</span>
-            <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
-            <span class="zoom-val" id="zoomVal">1.0x</span>
-          </div>
+          <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" style="display:none;" oninput="applyZoom(this.value)">
 
           <div class="status-row">
             <div class="status-dot" id="senderStatusDot"></div>
@@ -1296,6 +1267,7 @@
             <button class="cam-btn" onclick="sendRemoteControl('zoomOut')"><span class="cam-icon">&#x1F50E;</span>줌-</button>
             <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
           </div>
+
 
           <div class="status-row">
             <div class="status-dot connecting" id="viewerStatusDot"></div>
@@ -2248,6 +2220,20 @@ function applyZoom(val) {
   }
 }
 
+function senderZoomIn() {
+  const slider = document.getElementById('zoomSlider');
+  const newVal = Math.min(parseFloat(slider.value) + 0.5, parseFloat(slider.max));
+  slider.value = newVal;
+  applyZoom(newVal);
+}
+
+function senderZoomOut() {
+  const slider = document.getElementById('zoomSlider');
+  const newVal = Math.max(parseFloat(slider.value) - 0.5, parseFloat(slider.min));
+  slider.value = newVal;
+  applyZoom(newVal);
+}
+
 // ============================================================
 // AUDIO TOGGLE
 // ============================================================
@@ -2347,6 +2333,7 @@ function toggleRecord() {
     isStopping = true;
     mediaRecorder.stop();
     document.getElementById('btnRecord').classList.remove('recording');
+    document.getElementById('btnSenderLocalRec').classList.remove('recording');
     document.getElementById('senderRecBadge').classList.remove('visible');
     broadcastToViewers({ type: 'rec', recording: false });
     showToast('녹화 종료 · 저장 중...');
@@ -2408,6 +2395,7 @@ function toggleRecord() {
   isStopping = false;
   mediaRecorder.start(1000);
   document.getElementById('btnRecord').classList.add('recording');
+  document.getElementById('btnSenderLocalRec').classList.add('recording');
   document.getElementById('senderRecBadge').classList.add('visible');
   broadcastToViewers({ type: 'rec', recording: true });
   showToast('녹화 시작');
@@ -2758,6 +2746,7 @@ function stopAll() {
   document.getElementById('codeInput').value = '';
   document.getElementById('btnFlash').classList.remove('active');
   document.getElementById('btnRecord').classList.remove('recording');
+  document.getElementById('btnSenderLocalRec').classList.remove('recording');
   document.getElementById('btnAudio').classList.remove('active');
   document.getElementById('btnTimestamp').classList.remove('active');
   document.getElementById('btnViewerRecord').classList.remove('recording');
