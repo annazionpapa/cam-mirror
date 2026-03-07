@@ -512,38 +512,12 @@
   .cam-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); animation: blink 1s infinite; }
   .cam-btn .cam-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 
-  /* -- Remote controls (viewer) — same grid as cam-controls -- */
+  /* remote-controls: same grid as cam-controls, reuses .cam-btn */
   .remote-controls {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     margin-top: 10px;
-  }
-  .remote-btn {
-    padding: 10px 6px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text2);
-    font-size: 12px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-  }
-  .remote-btn:hover { border-color: var(--muted); }
-  .remote-btn:active { transform: scale(0.97); }
-  .remote-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
-  .remote-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); animation: blink 1s infinite; }
-  .remote-btn .r-icon { font-size: 16px; display: block; margin-bottom: 2px; }
-
-  /* -- Viewer local recording row -- */
-  .viewer-rec-row {
-    margin-top: 8px;
-  }
-  .viewer-rec-row .cam-btn {
-    width: 100%;
   }
 
   /* -- Zoom slider -- */
@@ -1045,23 +1019,9 @@
     .cam-btn .cam-icon { font-size: 15px; margin-bottom: 2px; }
 
     .remote-controls {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 3px;
       margin-top: 0;
-    }
-    .remote-btn {
-      padding: 10px 4px;
-      font-size: 11px;
-      border-radius: 8px;
-    }
-    .remote-btn .r-icon { font-size: 15px; margin-bottom: 2px; }
-
-    .viewer-rec-row {
-      margin-top: 4px;
-    }
-    .viewer-rec-row .cam-btn {
-      padding: 8px 4px;
-      font-size: 11px;
     }
 
     .zoom-row {
@@ -1325,22 +1285,16 @@
         <!-- Right: controls area -->
         <div class="live-controls-area">
           <div class="remote-controls" id="remoteControls">
-            <button class="remote-btn" onclick="sendRemoteControl('flip')"><span class="r-icon">&#x1F504;</span>전환</button>
-            <button class="remote-btn" onclick="sendRemoteControl('flash')"><span class="r-icon">&#x1F526;</span>플래시</button>
-            <button class="remote-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="r-icon">&#x23FA;</span>녹화</button>
-            <button class="remote-btn" onclick="sendRemoteControl('snapshot')"><span class="r-icon">&#x1F4F8;</span>캡처</button>
-            <button class="remote-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="r-icon">&#x1F50A;</span>오디오</button>
-            <button class="remote-btn" onclick="sendRemoteControl('timestamp')"><span class="r-icon">&#x1F550;</span>시간</button>
-            <button class="remote-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="r-icon">&#x1F4F9;</span>CCTV</button>
-            <button class="remote-btn" onclick="sendRemoteControl('zoomIn')"><span class="r-icon">&#x1F50D;</span>줌+</button>
-            <button class="remote-btn" onclick="sendRemoteControl('zoomOut')"><span class="r-icon">&#x1F50E;</span>줌-</button>
-          </div>
-
-          <!-- Viewer local recording -->
-          <div class="viewer-rec-row">
-            <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()">
-              <span class="cam-icon">&#x23FA;</span>이 화면 녹화
-            </button>
+            <button class="cam-btn" onclick="sendRemoteControl('flip')"><span class="cam-icon">&#x1F504;</span>전환</button>
+            <button class="cam-btn" onclick="sendRemoteControl('flash')"><span class="cam-icon">&#x1F526;</span>플래시</button>
+            <button class="cam-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="cam-icon">&#x23FA;</span>녹화</button>
+            <button class="cam-btn" onclick="sendRemoteControl('snapshot')"><span class="cam-icon">&#x1F4F8;</span>캡처</button>
+            <button class="cam-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="cam-icon">&#x1F50A;</span>오디오</button>
+            <button class="cam-btn" onclick="sendRemoteControl('timestamp')"><span class="cam-icon">&#x1F550;</span>시간</button>
+            <button class="cam-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="cam-icon">&#x1F4F9;</span>CCTV</button>
+            <button class="cam-btn" onclick="sendRemoteControl('zoomIn')"><span class="cam-icon">&#x1F50D;</span>줌+</button>
+            <button class="cam-btn" onclick="sendRemoteControl('zoomOut')"><span class="cam-icon">&#x1F50E;</span>줌-</button>
+            <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
           </div>
 
           <div class="status-row">
