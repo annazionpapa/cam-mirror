@@ -973,24 +973,19 @@
 
   /* ====== LANDSCAPE MODE ====== */
   @media (orientation: landscape) {
-    .header {
-      padding: 6px 16px;
-    }
-    .header .logo { font-size: 16px; }
-    .header .logo-sub { display: none; }
-    .header .badge { display: none; }
+    .header { display: none; }
 
     .main {
       max-width: 100%;
-      padding: 8px 12px;
+      padding: 4px 8px;
     }
 
     .mode-selector {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .mode-btn { padding: 6px; }
-    .mode-btn .icon { font-size: 14px; }
-    .mode-btn .label { font-size: 12px; }
+    .mode-btn { padding: 5px; }
+    .mode-btn .icon { font-size: 13px; }
+    .mode-btn .label { font-size: 11px; }
 
     /* Live layout: side-by-side */
     .live-layout {
@@ -1073,15 +1068,16 @@
     }
 
     .card {
-      padding: 10px;
-      margin-bottom: 8px;
+      padding: 6px 8px;
+      margin-bottom: 4px;
     }
 
     /* Hide non-essential in landscape */
     #howTo { display: none; }
+    .install-footer { display: none !important; }
 
     /* QR compact */
-    .qr-container { margin-bottom: 6px; }
+    .qr-container { margin-bottom: 4px; }
     .qr-box { max-width: 120px; padding: 6px; }
   }
 
