@@ -749,6 +749,23 @@
     color: var(--muted);
     margin-bottom: 16px;
   }
+  .modal-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    margin-bottom: 8px;
+    padding: 6px 0;
+  }
+  .modal-check input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
   .modal-btns {
     display: flex;
     gap: 8px;
@@ -834,6 +851,32 @@
     font-size: 11px;
     color: var(--muted);
     margin-top: 4px;
+  }
+  .settings-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+  .settings-section-label + .settings-group { margin-top: 0; }
+  .settings-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+  .settings-check input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
   }
   .settings-save-btn {
     width: 100%;
@@ -1269,6 +1312,8 @@
     <div class="modal-title">연결 요청</div>
     <div class="modal-desc">새 기기가 연결을 요청합니다.<br>허용하시겠습니까?</div>
     <div class="modal-timer" id="approvalTimer">30초 후 자동 허용</div>
+    <label class="modal-check"><input type="checkbox" id="chkAutoApprove"> 다음부터 묻지 않고 자동 연결</label>
+    <label class="modal-check"><input type="checkbox" id="chkAutoAudio"> 연결 시 오디오 자동 켜기</label>
     <div class="modal-btns">
       <button class="btn btn-secondary" onclick="rejectPendingCall()">거부</button>
       <button class="btn btn-primary" onclick="approvePendingCall()">허용</button>
@@ -1280,9 +1325,16 @@
 <div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
 <div class="settings-panel" id="settingsPanel">
   <div class="settings-title">
-    <span>&#9881; TURN 서버 설정</span>
+    <span>&#9881; 설정</span>
     <button class="settings-close" onclick="closeSettings()">&#x2715;</button>
   </div>
+  <div class="settings-section-label">연결 설정</div>
+  <div class="settings-group">
+    <label class="settings-check"><input type="checkbox" id="setAutoApprove" onchange="toggleSettingAutoApprove()"> 자동 연결 승인 (묻지 않음)</label>
+    <label class="settings-check"><input type="checkbox" id="setAutoAudio" onchange="toggleSettingAutoAudio()"> 연결 시 오디오 자동 켜기</label>
+    <div class="settings-hint">체크하면 연결 요청을 자동으로 허용하고 오디오를 바로 켭니다.</div>
+  </div>
+  <div class="settings-section-label">TURN 서버</div>
   <div class="settings-group">
     <label>TURN 서버 URL</label>
     <input type="text" id="turnUrl" placeholder="turn:your-server.com:3478">
@@ -1471,8 +1523,32 @@ function openSettings() {
   document.getElementById('turnUrl').value = localStorage.getItem('turnUrl') || '';
   document.getElementById('turnUser').value = localStorage.getItem('turnUser') || '';
   document.getElementById('turnCred').value = localStorage.getItem('turnCred') || '';
+  document.getElementById('setAutoApprove').checked = localStorage.getItem('autoApprove') === '1';
+  document.getElementById('setAutoAudio').checked = localStorage.getItem('autoAudio') === '1';
   document.getElementById('settingsOverlay').classList.add('visible');
   document.getElementById('settingsPanel').classList.add('visible');
+}
+
+function toggleSettingAutoApprove() {
+  const on = document.getElementById('setAutoApprove').checked;
+  if (on) {
+    localStorage.setItem('autoApprove', '1');
+    showToast('자동 연결 승인 켜짐');
+  } else {
+    localStorage.removeItem('autoApprove');
+    showToast('자동 연결 승인 꺼짐');
+  }
+}
+
+function toggleSettingAutoAudio() {
+  const on = document.getElementById('setAutoAudio').checked;
+  if (on) {
+    localStorage.setItem('autoAudio', '1');
+    showToast('자동 오디오 켜짐');
+  } else {
+    localStorage.removeItem('autoAudio');
+    showToast('자동 오디오 꺼짐');
+  }
 }
 
 function closeSettings() {
@@ -1805,7 +1881,18 @@ function createSenderPeer(code) {
 // ============================================================
 function showApprovalModal(call) {
   pendingIncomingCall = call;
+
+  // Auto-approve: skip modal if saved
+  if (localStorage.getItem('autoApprove') === '1') {
+    showToast('자동 연결 승인');
+    approvePendingCall();
+    return;
+  }
+
   const modal = document.getElementById('approvalModal');
+  // Restore saved checkbox states
+  document.getElementById('chkAutoApprove').checked = localStorage.getItem('autoApprove') === '1';
+  document.getElementById('chkAutoAudio').checked = localStorage.getItem('autoAudio') === '1';
   modal.classList.add('visible');
 
   let countdown = 30;
@@ -1825,6 +1912,17 @@ function showApprovalModal(call) {
 
 function approvePendingCall() {
   clearInterval(approvalTimeout);
+
+  // Save checkbox states from modal (if modal was shown)
+  const chkApprove = document.getElementById('chkAutoApprove');
+  const chkAudio = document.getElementById('chkAutoAudio');
+  if (chkApprove.checked) {
+    localStorage.setItem('autoApprove', '1');
+  }
+  if (chkAudio.checked) {
+    localStorage.setItem('autoAudio', '1');
+  }
+
   document.getElementById('approvalModal').classList.remove('visible');
 
   if (!pendingIncomingCall) return;
@@ -1855,6 +1953,11 @@ function approvePendingCall() {
   const isLand = window.innerWidth > window.innerHeight;
   senderOrientation = isLand ? 'landscape' : 'portrait';
   broadcastToViewers({ type: 'orientation', orientation: senderOrientation });
+
+  // Auto-enable audio if saved
+  if (localStorage.getItem('autoAudio') === '1' && !audioOn) {
+    setTimeout(() => toggleAudio(), 500);
+  }
 }
 
 // ============================================================
