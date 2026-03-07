@@ -538,6 +538,14 @@
   .remote-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); animation: blink 1s infinite; }
   .remote-btn .r-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 
+  /* -- Viewer local recording row -- */
+  .viewer-rec-row {
+    margin-top: 8px;
+  }
+  .viewer-rec-row .cam-btn {
+    width: 100%;
+  }
+
   /* -- Zoom slider -- */
   .zoom-row {
     display: flex;
@@ -1026,36 +1034,45 @@
 
     .cam-controls {
       grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
+      gap: 3px;
       margin-top: 0;
     }
     .cam-btn {
-      padding: 6px 3px;
-      font-size: 10px;
+      padding: 10px 4px;
+      font-size: 11px;
       border-radius: 8px;
     }
-    .cam-btn .cam-icon { font-size: 13px; margin-bottom: 1px; }
+    .cam-btn .cam-icon { font-size: 15px; margin-bottom: 2px; }
 
     .remote-controls {
-      gap: 4px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
       margin-top: 0;
     }
     .remote-btn {
-      padding: 6px 3px;
-      font-size: 10px;
+      padding: 10px 4px;
+      font-size: 11px;
       border-radius: 8px;
     }
-    .remote-btn .r-icon { font-size: 13px; margin-bottom: 1px; }
+    .remote-btn .r-icon { font-size: 15px; margin-bottom: 2px; }
+
+    .viewer-rec-row {
+      margin-top: 4px;
+    }
+    .viewer-rec-row .cam-btn {
+      padding: 8px 4px;
+      font-size: 11px;
+    }
 
     .zoom-row {
-      margin-top: 6px;
+      margin-top: 4px;
       padding: 5px 8px;
     }
     .zoom-label { font-size: 10px; min-width: 20px; }
     .zoom-val { font-size: 11px; min-width: 28px; }
 
     .status-row {
-      margin-top: 6px;
+      margin-top: 4px;
       padding: 5px 8px;
       font-size: 11px;
     }
@@ -1063,12 +1080,26 @@
     .btn-danger {
       padding: 8px;
       font-size: 12px;
-      margin-top: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      padding: 8px;
+      font-size: 12px;
+      margin-top: 4px;
     }
 
     .card {
       padding: 6px 8px;
       margin-bottom: 4px;
+    }
+
+    /* Controls area fills available space */
+    .live-controls-area {
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
     }
 
     /* Hide non-essential in landscape */
@@ -1252,6 +1283,7 @@
             <div class="status-dot" id="senderStatusDot"></div>
             <span id="senderStatusText">모니터 연결 대기 중...</span>
           </div>
+          <button class="btn btn-primary hidden" id="senderReconnectBtn" onclick="senderManualReconnect()" style="margin-top:8px;">&#x1F504; 재연결</button>
           <button class="btn btn-danger" onclick="stopAll()">종료</button>
         </div>
       </div>
@@ -1302,6 +1334,13 @@
             <button class="remote-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="r-icon">&#x1F4F9;</span>CCTV</button>
             <button class="remote-btn" onclick="sendRemoteControl('zoomIn')"><span class="r-icon">&#x1F50D;</span>줌+</button>
             <button class="remote-btn" onclick="sendRemoteControl('zoomOut')"><span class="r-icon">&#x1F50E;</span>줌-</button>
+          </div>
+
+          <!-- Viewer local recording -->
+          <div class="viewer-rec-row">
+            <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()">
+              <span class="cam-icon">&#x23FA;</span>이 화면 녹화
+            </button>
           </div>
 
           <div class="status-row">
@@ -1430,12 +1469,16 @@ let canvasSizeSet = false;
 // Canvas bypass optimization
 let useCanvasPipeline = false;
 
-// Recording
+// Recording (sender)
 let mediaRecorder = null;
 let recordedChunks = [];
 let pendingBlob = null;
 let pendingFileName = '';
 let isStopping = false;
+
+// Recording (viewer)
+let viewerMediaRecorder = null;
+let viewerRecordedChunks = [];
 
 // Multi-viewer support
 let viewers = []; // {call, dataConn}
@@ -1459,6 +1502,10 @@ let wakeLockSentinel = null;
 let codeRetryCount = 0;
 const MAX_CODE_RETRIES = 5;
 let currentRoomCode = '';
+
+// Sender reconnect
+let senderReconnectAttempts = 0;
+let senderReconnectTimer = null;
 
 // Fit mode toggle (contain/cover)
 let fitCover = false;
@@ -1853,6 +1900,8 @@ function createSenderPeer(code) {
     document.getElementById('senderReady').classList.add('hidden');
     document.getElementById('senderLive').classList.remove('hidden');
     document.getElementById('howTo').classList.add('hidden');
+    document.getElementById('senderReconnectBtn').classList.add('hidden');
+    senderReconnectAttempts = 0;
     updateSenderStatus();
     generateQR(code);
   });
@@ -1886,14 +1935,28 @@ function createSenderPeer(code) {
   });
 
   peer.on('disconnected', () => {
-    // Sender reconnect: try to recreate with same ID
+    // Sender reconnect: try peer.reconnect() first, then full recreate
     if (peer && !peer.destroyed) {
-      showToast('연결 끊김, 재연결 중...');
-      setTimeout(() => {
+      senderReconnectAttempts++;
+      const maxRetries = 10;
+      if (senderReconnectAttempts > maxRetries) {
+        showToast('시그널링 서버 연결 실패');
+        document.getElementById('senderStatusText').textContent = '연결 끊김 · 재연결 버튼을 눌러주세요';
+        document.getElementById('senderReconnectBtn').classList.remove('hidden');
+        return;
+      }
+      const delay = Math.min(1000 * senderReconnectAttempts, 5000);
+      showToast('시그널링 서버 연결 끊김 · 재연결 중... (' + senderReconnectAttempts + '/' + maxRetries + ')');
+      document.getElementById('senderStatusText').textContent = '재연결 중... (' + senderReconnectAttempts + '/' + maxRetries + ')';
+      clearTimeout(senderReconnectTimer);
+      senderReconnectTimer = setTimeout(() => {
         if (peer && !peer.destroyed) {
           peer.reconnect();
+        } else {
+          // Peer destroyed, recreate with same code
+          createSenderPeer(currentRoomCode);
         }
-      }, 2000);
+      }, delay);
     }
   });
 
@@ -2379,13 +2442,11 @@ function toggleRecord() {
 
   mediaRecorder.onstop = () => {
     const mime = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'video/webm';
-    pendingBlob = new Blob(recordedChunks, { type: mime });
-    pendingFileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
-    const sizeMB = (pendingBlob.size / 1024 / 1024).toFixed(1);
-    document.getElementById('saveFileName').textContent = pendingFileName;
-    document.getElementById('saveFileSize').textContent = sizeMB + ' MB';
-    document.getElementById('saveBar').classList.add('visible');
-    // Now it's safe to null out
+    const blob = new Blob(recordedChunks, { type: mime });
+    recordedChunks = []; // Free memory immediately
+    const fileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+    // Auto-save immediately
+    autoDownloadBlob(blob, fileName);
     mediaRecorder = null;
     isStopping = false;
   };
@@ -2399,7 +2460,23 @@ function toggleRecord() {
 }
 
 // ============================================================
-// SAVE RECORDING / SNAPSHOT
+// AUTO DOWNLOAD (recordings auto-save)
+// ============================================================
+function autoDownloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
+  showToast('저장됨 · ' + fileName + ' (' + sizeMB + 'MB)');
+}
+
+// ============================================================
+// SAVE SNAPSHOT (manual save bar — snapshots only)
 // ============================================================
 function saveRecording() {
   if (!pendingBlob) return;
@@ -2418,11 +2495,63 @@ function saveRecording() {
 }
 
 function dismissSave() {
-  // Bug fix: removed meaningless URL.createObjectURL call
   pendingBlob = null;
   pendingFileName = '';
   document.getElementById('saveBar').classList.remove('visible');
   showToast('파일 삭제됨');
+}
+
+// ============================================================
+// VIEWER LOCAL RECORDING
+// ============================================================
+function toggleViewerRecord() {
+  if (viewerMediaRecorder && viewerMediaRecorder.state === 'recording') {
+    viewerMediaRecorder.stop();
+    document.getElementById('btnViewerRecord').classList.remove('recording');
+    showToast('뷰어 녹화 종료 · 저장 중...');
+    return;
+  }
+
+  const remoteVideo = document.getElementById('remoteVideo');
+  if (!remoteVideo || !remoteVideo.srcObject) {
+    showToast('수신 중인 영상이 없습니다');
+    return;
+  }
+
+  const recStream = remoteVideo.srcObject;
+  viewerRecordedChunks = [];
+
+  let options = { mimeType: 'video/webm;codecs=vp9' };
+  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    options = { mimeType: 'video/webm;codecs=vp8' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options = { mimeType: 'video/webm' };
+    }
+  }
+
+  try {
+    viewerMediaRecorder = new MediaRecorder(recStream, options);
+  } catch (e) {
+    showToast('녹화를 지원하지 않는 브라우저입니다');
+    return;
+  }
+
+  viewerMediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) viewerRecordedChunks.push(e.data);
+  };
+
+  viewerMediaRecorder.onstop = () => {
+    const mime = (viewerMediaRecorder && viewerMediaRecorder.mimeType) ? viewerMediaRecorder.mimeType : 'video/webm';
+    const blob = new Blob(viewerRecordedChunks, { type: mime });
+    viewerRecordedChunks = [];
+    const fileName = 'CamMirror-Viewer-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+    autoDownloadBlob(blob, fileName);
+    viewerMediaRecorder = null;
+  };
+
+  viewerMediaRecorder.start(1000);
+  document.getElementById('btnViewerRecord').classList.add('recording');
+  showToast('뷰어 녹화 시작');
 }
 
 // ============================================================
@@ -2571,6 +2700,20 @@ function manualReconnect() {
   attemptViewerReconnect();
 }
 
+// Sender manual reconnect
+function senderManualReconnect() {
+  senderReconnectAttempts = 0;
+  clearTimeout(senderReconnectTimer);
+  document.getElementById('senderReconnectBtn').classList.add('hidden');
+  if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+  // Recreate peer with same code
+  if (currentRoomCode) {
+    codeRetryCount = 0;
+    createSenderPeer(currentRoomCode);
+    showToast('재연결 중...');
+  }
+}
+
 function sendRemoteControl(action) {
   if (viewerDataConn && viewerDataConn.open) {
     viewerDataConn.send({ type: 'control', action: action });
@@ -2589,13 +2732,19 @@ function getFakeStream() {
 // STOP ALL
 // ============================================================
 function stopAll() {
-  // Recording: use flag to avoid race condition
+  // Sender recording: use flag to avoid race condition
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     isStopping = true;
     mediaRecorder.stop();
-    // Don't null mediaRecorder here — onstop callback will do it
   } else {
     mediaRecorder = null;
+  }
+
+  // Viewer recording
+  if (viewerMediaRecorder && viewerMediaRecorder.state === 'recording') {
+    viewerMediaRecorder.stop();
+  } else {
+    viewerMediaRecorder = null;
   }
 
   // Notify viewers before closing connections (sender side)
@@ -2626,6 +2775,10 @@ function stopAll() {
   viewerReconnectAttempts = 0;
   viewerReconnecting = false;
 
+  // Sender reconnect cleanup
+  clearTimeout(senderReconnectTimer);
+  senderReconnectAttempts = 0;
+
   if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
 
   flashOn = false;
@@ -2653,8 +2806,10 @@ function stopAll() {
   document.getElementById('btnRecord').classList.remove('recording');
   document.getElementById('btnAudio').classList.remove('active');
   document.getElementById('btnTimestamp').classList.remove('active');
+  document.getElementById('btnViewerRecord').classList.remove('recording');
   document.getElementById('senderRecBadge').classList.remove('visible');
   document.getElementById('viewerRecBadge').classList.remove('visible');
+  document.getElementById('senderReconnectBtn').classList.add('hidden');
   document.getElementById('localVideo').style.transform = '';
   const remoteVideo = document.getElementById('remoteVideo');
   if (remoteVideo) remoteVideo.classList.remove('fit-cover');
