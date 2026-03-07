@@ -903,7 +903,7 @@
   .live-code-new:hover, .live-code-qr:hover { border-color: var(--muted); color: var(--text2); }
 
   /* ====== LANDSCAPE MODE ====== */
-  @media (orientation: landscape) and (max-height: 500px) {
+  @media (orientation: landscape) {
     .header {
       padding: 6px 16px;
     }
@@ -971,15 +971,19 @@
     .cam-btn .cam-icon { font-size: 13px; margin-bottom: 1px; }
 
     .remote-controls {
-      gap: 3px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       margin-top: 0;
     }
     .remote-btn {
-      padding: 5px 8px;
+      padding: 6px 3px;
       font-size: 10px;
       border-radius: 8px;
+      flex-direction: column;
+      justify-content: center;
     }
-    .remote-btn .r-icon { font-size: 12px; }
+    .remote-btn .r-icon { font-size: 13px; }
 
     .zoom-row {
       margin-top: 6px;
@@ -1013,31 +1017,7 @@
     .qr-box { max-width: 120px; padding: 6px; }
   }
 
-  /* Wider landscape (tablets / larger phones) */
-  @media (orientation: landscape) and (min-height: 501px) {
-    .live-layout {
-      flex-direction: row;
-      gap: 16px;
-      align-items: flex-start;
-    }
-    .live-video-area {
-      flex: 1;
-      min-width: 0;
-    }
-    .live-video-area .video-wrap {
-      aspect-ratio: 16/9;
-    }
-    .live-controls-area {
-      width: 260px;
-      flex-shrink: 0;
-      max-height: calc(100dvh - 100px);
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .main {
-      max-width: 100%;
-    }
-  }
+  /* (tablet landscape merged into main landscape block above) */
 
   /* -- CCTV (screen off) mode -- */
   .cctv-overlay {
