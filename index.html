@@ -2365,13 +2365,7 @@ function toggleRecord() {
 
   recordedChunks = [];
 
-  let options = { mimeType: 'video/webm;codecs=vp9' };
-  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-    options = { mimeType: 'video/webm;codecs=vp8' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm' };
-    }
-  }
+  const options = pickRecorderMime();
 
   try {
     mediaRecorder = new MediaRecorder(recStream, options);
@@ -2387,9 +2381,9 @@ function toggleRecord() {
   mediaRecorder.onstop = () => {
     const mime = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'video/webm';
     const blob = new Blob(recordedChunks, { type: mime });
-    recordedChunks = []; // Free memory immediately
-    const fileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
-    // Auto-save immediately
+    recordedChunks = [];
+    const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const fileName = 'CamMirror-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.' + ext;
     autoDownloadBlob(blob, fileName);
     mediaRecorder = null;
     isStopping = false;
@@ -2402,6 +2396,26 @@ function toggleRecord() {
   document.getElementById('senderRecBadge').classList.add('visible');
   broadcastToViewers({ type: 'rec', recording: true });
   showToast('녹화 시작');
+}
+
+// ============================================================
+// RECORDING MIME TYPE SELECTION (MP4 preferred, WebM fallback)
+// ============================================================
+function pickRecorderMime() {
+  const candidates = [
+    'video/mp4;codecs=avc1,mp4a.40.2',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) {
+      return { mimeType: mime };
+    }
+  }
+  return {};
 }
 
 // ============================================================
@@ -2466,13 +2480,7 @@ function toggleViewerRecord() {
   const recStream = remoteVideo.srcObject;
   viewerRecordedChunks = [];
 
-  let options = { mimeType: 'video/webm;codecs=vp9' };
-  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-    options = { mimeType: 'video/webm;codecs=vp8' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm' };
-    }
-  }
+  const options = pickRecorderMime();
 
   try {
     viewerMediaRecorder = new MediaRecorder(recStream, options);
@@ -2489,7 +2497,8 @@ function toggleViewerRecord() {
     const mime = (viewerMediaRecorder && viewerMediaRecorder.mimeType) ? viewerMediaRecorder.mimeType : 'video/webm';
     const blob = new Blob(viewerRecordedChunks, { type: mime });
     viewerRecordedChunks = [];
-    const fileName = 'CamMirror-Viewer-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+    const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const fileName = 'CamMirror-Viewer-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.' + ext;
     autoDownloadBlob(blob, fileName);
     viewerMediaRecorder = null;
   };
