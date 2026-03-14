@@ -511,7 +511,7 @@
   .cam-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .cam-btn.recording { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.15); }
   .cam-btn .cam-icon { font-size: 20px; display: block; margin-bottom: 3px; }
-  .cam-btn-stop { grid-column: span 2; border-color: var(--danger); color: var(--danger); }
+  .cam-btn-stop { grid-column: span 3; border-color: var(--danger); color: var(--danger); }
   .cam-btn-stop:hover { background: rgba(239,68,68,0.15); }
 
   /* remote-controls: same grid as cam-controls, reuses .cam-btn */
@@ -1209,7 +1209,6 @@
             <button class="cam-btn" id="btnCctv" onclick="enterCctvMode()"><span class="cam-icon">&#x1F4F9;</span>CCTV</button>
             <button class="cam-btn" onclick="senderZoomIn()"><span class="cam-icon">&#x1F50D;</span>줌+</button>
             <button class="cam-btn" onclick="senderZoomOut()"><span class="cam-icon">&#x1F50E;</span>줌-</button>
-            <button class="cam-btn" id="btnSenderLocalRec" onclick="toggleRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
             <button class="cam-btn cam-btn-stop" onclick="stopAll()"><span class="cam-icon">&#x23F9;</span>종료</button>
           </div>
           <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" style="display:none;" oninput="applyZoom(this.value)">
@@ -1262,14 +1261,13 @@
           <div class="remote-controls" id="remoteControls">
             <button class="cam-btn" onclick="sendRemoteControl('flip')"><span class="cam-icon">&#x1F504;</span>전환</button>
             <button class="cam-btn" onclick="sendRemoteControl('flash')"><span class="cam-icon">&#x1F526;</span>플래시</button>
-            <button class="cam-btn" id="remoteRecBtn" onclick="sendRemoteControl('record')"><span class="cam-icon">&#x23FA;</span>녹화</button>
+            <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()"><span class="cam-icon">&#x23FA;</span>녹화</button>
             <button class="cam-btn" onclick="sendRemoteControl('snapshot')"><span class="cam-icon">&#x1F4F8;</span>캡처</button>
             <button class="cam-btn" id="remoteAudioBtn" onclick="sendRemoteControl('audio')"><span class="cam-icon">&#x1F50A;</span>오디오</button>
             <button class="cam-btn" onclick="sendRemoteControl('timestamp')"><span class="cam-icon">&#x1F550;</span>시간</button>
             <button class="cam-btn" id="remoteCctvBtn" onclick="sendRemoteControl('cctv')"><span class="cam-icon">&#x1F4F9;</span>CCTV</button>
             <button class="cam-btn" onclick="sendRemoteControl('zoomIn')"><span class="cam-icon">&#x1F50D;</span>줌+</button>
             <button class="cam-btn" onclick="sendRemoteControl('zoomOut')"><span class="cam-icon">&#x1F50E;</span>줌-</button>
-            <button class="cam-btn" id="btnViewerRecord" onclick="toggleViewerRecord()"><span class="cam-icon">&#x23FA;</span>화면녹화</button>
             <button class="cam-btn cam-btn-stop" onclick="stopAll()"><span class="cam-icon">&#x23F9;</span>종료</button>
           </div>
 
@@ -2336,7 +2334,6 @@ function toggleRecord() {
     isStopping = true;
     mediaRecorder.stop();
     document.getElementById('btnRecord').classList.remove('recording');
-    document.getElementById('btnSenderLocalRec').classList.remove('recording');
     document.getElementById('senderRecBadge').classList.remove('visible');
     broadcastToViewers({ type: 'rec', recording: false });
     showToast('녹화 종료 · 저장 중...');
@@ -2392,7 +2389,6 @@ function toggleRecord() {
   isStopping = false;
   mediaRecorder.start(1000);
   document.getElementById('btnRecord').classList.add('recording');
-  document.getElementById('btnSenderLocalRec').classList.add('recording');
   document.getElementById('senderRecBadge').classList.add('visible');
   broadcastToViewers({ type: 'rec', recording: true });
   showToast('녹화 시작');
@@ -2538,8 +2534,6 @@ function connectViewer(code) {
     viewerDataConn.on('data', (msg) => {
       if (msg && msg.type === 'rec') {
         document.getElementById('viewerRecBadge').classList.toggle('visible', msg.recording);
-        const remRecBtn = document.getElementById('remoteRecBtn');
-        if (remRecBtn) remRecBtn.classList.toggle('recording', msg.recording);
       }
       if (msg && msg.type === 'viewerCount') {
         // could display but optional
@@ -2758,7 +2752,6 @@ function stopAll() {
   document.getElementById('codeInput').value = '';
   document.getElementById('btnFlash').classList.remove('active');
   document.getElementById('btnRecord').classList.remove('recording');
-  document.getElementById('btnSenderLocalRec').classList.remove('recording');
   document.getElementById('btnAudio').classList.remove('active');
   document.getElementById('btnTimestamp').classList.remove('active');
   document.getElementById('btnViewerRecord').classList.remove('recording');
