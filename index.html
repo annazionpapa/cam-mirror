@@ -1446,12 +1446,27 @@ let cctvMode = false;
 // PWA
 let deferredInstallPrompt = null;
 
-// ICE Config
+// ICE Config — STUN + free TURN relay for NAT/firewall traversal
 const ICE_CONFIG = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
+    { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
   ]
 };
 
@@ -2530,7 +2545,14 @@ function connectViewer(code) {
 
   peer.on('open', () => {
     // Data channel for receiving recording status & sending controls
-    viewerDataConn = peer.connect('cm-' + code);
+    viewerDataConn = peer.connect('cm-' + code, { reliable: true });
+    viewerDataConn.on('open', () => {
+      console.log('[CamMirror] Data channel opened');
+    });
+    viewerDataConn.on('error', (err) => {
+      console.error('[CamMirror] Data channel error:', err);
+      showToast('데이터 채널 오류 · 재연결 시도 중...');
+    });
     viewerDataConn.on('data', (msg) => {
       if (msg && msg.type === 'rec') {
         document.getElementById('viewerRecBadge').classList.toggle('visible', msg.recording);
@@ -2564,6 +2586,10 @@ function connectViewer(code) {
 
     const call = peer.call('cm-' + code, getFakeStream());
     viewerCall = call;
+    call.on('error', (err) => {
+      console.error('[CamMirror] Call error:', err);
+      showToast('영상 연결 오류: ' + (err.message || err));
+    });
     call.on('stream', (remoteStream) => {
       const rv = document.getElementById('remoteVideo');
       rv.srcObject = remoteStream;
