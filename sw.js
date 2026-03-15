@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cam-mirror-v11';
+const CACHE_NAME = 'cam-mirror-v12';
 const ASSETS = [
   '/',
   '/index.html',

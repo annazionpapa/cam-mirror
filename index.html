@@ -2538,20 +2538,26 @@ function startViewer() {
 
 function connectViewer(code) {
   const iceConfig = getIceConfig();
+  const statusTxt = document.getElementById('viewerStatusText');
+  statusTxt.textContent = '① 시그널링 서버 연결 중...';
+
   peer = new Peer({
-    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 0,
+    host: '0.peerjs.com', port: 443, path: '/', secure: true, debug: 2,
     config: iceConfig
   });
 
   peer.on('open', () => {
+    statusTxt.textContent = '② 촬영폰에 연결 요청 중...';
     // Data channel for receiving recording status & sending controls
     viewerDataConn = peer.connect('cm-' + code, { reliable: true });
     viewerDataConn.on('open', () => {
       console.log('[CamMirror] Data channel opened');
+      statusTxt.textContent = '③ 데이터 채널 연결됨 · 영상 대기 중...';
     });
     viewerDataConn.on('error', (err) => {
       console.error('[CamMirror] Data channel error:', err);
-      showToast('데이터 채널 오류 · 재연결 시도 중...');
+      statusTxt.textContent = '데이터 채널 오류: ' + (err.message || err);
+      showToast('데이터 채널 오류');
     });
     viewerDataConn.on('data', (msg) => {
       if (msg && msg.type === 'rec') {
@@ -2594,12 +2600,12 @@ function connectViewer(code) {
       const rv = document.getElementById('remoteVideo');
       rv.srcObject = remoteStream;
       rv.muted = true;
-      rv.play().catch(() => {});
+      rv.play().catch((e) => { console.error('[CamMirror] play() error:', e); });
       const dot = document.getElementById('viewerStatusDot');
       const txt = document.getElementById('viewerStatusText');
       dot.classList.add('on');
       dot.classList.remove('connecting');
-      txt.textContent = '연결됨 · 실시간 수신 중';
+      txt.textContent = '④ 연결됨 · 실시간 수신 중';
       showToast('연결 성공!');
       viewerReconnectAttempts = 0;
       // Viewer side: wake lock to prevent screen dimming
