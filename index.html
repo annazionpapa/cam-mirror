@@ -1243,7 +1243,7 @@
         <!-- Left: video area -->
         <div class="live-video-area">
           <div class="video-wrap" id="viewerVideoWrap">
-            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="remoteVideo" autoplay muted playsinline></video>
             <div class="video-overlay">
               <div class="live-dot"></div>
               <div class="live-label">LIVE</div>
@@ -2565,7 +2565,10 @@ function connectViewer(code) {
     const call = peer.call('cm-' + code, getFakeStream());
     viewerCall = call;
     call.on('stream', (remoteStream) => {
-      document.getElementById('remoteVideo').srcObject = remoteStream;
+      const rv = document.getElementById('remoteVideo');
+      rv.srcObject = remoteStream;
+      rv.muted = true;
+      rv.play().catch(() => {});
       const dot = document.getElementById('viewerStatusDot');
       const txt = document.getElementById('viewerStatusText');
       dot.classList.add('on');
